@@ -115,6 +115,7 @@ export default function Onboarding() {
       }
     });
     completeOnboarding();
+    localStorage.setItem('onboardingCompleted', 'true');
 
     // Write immediately — don't rely on the debounced sync so a quick
     // page refresh can't race past the save.

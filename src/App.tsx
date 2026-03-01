@@ -15,7 +15,9 @@ import Settings from './pages/Settings/Settings';
 import WhatCanIPlant from './pages/Tools/WhatCanIPlant';
 
 function AppRoutes() {
-  const onboardingCompleted = useGardenStore((s) => s.settings.onboardingCompleted);
+  const onboardingCompleted =
+    useGardenStore((s) => s.settings.onboardingCompleted) ||
+    localStorage.getItem('onboardingCompleted') === 'true';
 
   if (!onboardingCompleted) {
     return (

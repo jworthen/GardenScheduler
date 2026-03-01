@@ -26,6 +26,7 @@ export function useFirestoreSync() {
     if (!user) {
       if (loadedRef.current) {
         reset();
+        localStorage.removeItem('onboardingCompleted');
         loadedRef.current = false;
         setReady(false);
       }
