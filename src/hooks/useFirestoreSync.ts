@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useGardenStore, GardenStoreData } from '../store/useStore';
@@ -19,7 +19,6 @@ export function useFirestoreSync() {
   const hydrate = useGardenStore((s) => s.hydrate);
   const reset = useGardenStore((s) => s.reset);
   const loadedRef = useRef(false);
-  const [ready, setReady] = useState(false);
 
   // Load from Firestore on sign-in; reset store on sign-out
   useEffect(() => {
@@ -28,13 +27,11 @@ export function useFirestoreSync() {
         reset();
         localStorage.removeItem('onboardingCompleted');
         loadedRef.current = false;
-        setReady(false);
       }
       return;
     }
 
     loadedRef.current = false;
-    setReady(false);
     const docRef = doc(db, 'users', user.uid, 'data', 'gardenData');
     getDoc(docRef)
       .then((snap) => {
@@ -43,11 +40,10 @@ export function useFirestoreSync() {
         }
       })
       .catch(() => {
-        // Firestore read failed — proceed with default store state
+        // Firestore read failed — local (persisted) data is used as-is
       })
       .finally(() => {
         loadedRef.current = true;
-        setReady(true);
       });
   }, [user]);
 
@@ -69,5 +65,4 @@ export function useFirestoreSync() {
     return () => unsubscribe();
   }, [user]);
 
-  return { ready };
 }

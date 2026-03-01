@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import {
   UserSettings,
   PlantingEntry,
@@ -111,7 +112,9 @@ interface GardenStore extends GardenStoreData {
   reset: () => void;
 }
 
-export const useGardenStore = create<GardenStore>()((set, get) => ({
+export const useGardenStore = create<GardenStore>()(
+  persist(
+    (set, get) => ({
       settings: DEFAULT_SETTINGS,
       plantings: [],
       tasks: [],
@@ -410,4 +413,7 @@ export const useGardenStore = create<GardenStore>()((set, get) => ({
         journalEntries: [],
         customPlants: [],
       }),
-    }));
+    }),
+    { name: 'garden-store' }
+  )
+);

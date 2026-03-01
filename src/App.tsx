@@ -46,16 +46,7 @@ function AppRoutes() {
 }
 
 function AuthenticatedApp() {
-  const { ready } = useFirestoreSync();
-
-  if (!ready) {
-    return (
-      <div className="min-h-screen bg-green-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
+  useFirestoreSync();
   return <AppRoutes />;
 }
 
