@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import {
   UserSettings,
   PlantingEntry,
@@ -37,7 +36,16 @@ const DEFAULT_SETTINGS: UserSettings = {
   onboardingCompleted: false,
 };
 
-interface GardenStore {
+export interface GardenStoreData {
+  settings: UserSettings;
+  plantings: PlantingEntry[];
+  tasks: Task[];
+  inventory: InventoryItem[];
+  journalEntries: JournalEntry[];
+  customPlants: Seed[];
+}
+
+interface GardenStore extends GardenStoreData {
   // State
   settings: UserSettings;
   plantings: PlantingEntry[];
@@ -90,11 +98,20 @@ interface GardenStore {
   getTasksForDate: (dateStr: string) => Task[];
   getUpcomingTasks: (daysAhead: number) => Task[];
   getOverdueTasks: () => Task[];
+
+  // Firestore sync
+  hydrate: (data: Partial<{
+    settings: UserSettings;
+    plantings: PlantingEntry[];
+    tasks: Task[];
+    inventory: InventoryItem[];
+    journalEntries: JournalEntry[];
+    customPlants: Seed[];
+  }>) => void;
+  reset: () => void;
 }
 
-export const useGardenStore = create<GardenStore>()(
-  persist(
-    (set, get) => ({
+export const useGardenStore = create<GardenStore>()((set, get) => ({
       settings: DEFAULT_SETTINGS,
       plantings: [],
       tasks: [],
@@ -375,9 +392,22 @@ export const useGardenStore = create<GardenStore>()(
           return !t.completed && taskDate < today;
         }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
       },
-    }),
-    {
-      name: 'garden-scheduler-storage',
-    }
-  )
-);
+
+      hydrate: (data) => set((state) => ({
+        settings: data.settings ?? state.settings,
+        plantings: data.plantings ?? state.plantings,
+        tasks: data.tasks ?? state.tasks,
+        inventory: data.inventory ?? state.inventory,
+        journalEntries: data.journalEntries ?? state.journalEntries,
+        customPlants: data.customPlants ?? state.customPlants,
+      })),
+
+      reset: () => set({
+        settings: DEFAULT_SETTINGS,
+        plantings: [],
+        tasks: [],
+        inventory: [],
+        journalEntries: [],
+        customPlants: [],
+      }),
+    }));

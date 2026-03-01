@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Search, Edit2, Trash2, Package, AlertCircle, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
-import { InventoryItem } from '../../types';
+import { InventoryItem, Seed } from '../../types';
 import PageHeader from '../../components/common/PageHeader';
 import Modal from '../../components/common/Modal';
 import { format } from '../../utils/dateCalculations';
@@ -228,7 +228,7 @@ interface InventoryFormModalProps {
   item: InventoryItem | null;
   onClose: () => void;
   onSave: (data: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  seeds: ReturnType<ReturnType<typeof useGardenStore>['getAllSeeds']>;
+  seeds: Seed[];
 }
 
 function InventoryFormModal({ isOpen, item, onClose, onSave, seeds }: InventoryFormModalProps) {

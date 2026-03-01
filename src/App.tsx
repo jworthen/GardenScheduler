@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useGardenStore } from './store/useStore';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useFirestoreSync } from './hooks/useFirestoreSync';
+import SignInPage from './components/Auth/SignInPage';
 import Layout from './components/Layout/Layout';
 import Onboarding from './pages/Onboarding/Onboarding';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -40,10 +43,35 @@ function AppRoutes() {
   );
 }
 
+function AuthenticatedApp() {
+  useFirestoreSync();
+  return <AppRoutes />;
+}
+
+function AppContent() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-green-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <SignInPage />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
