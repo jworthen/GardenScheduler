@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useGardenStore, GardenStoreData } from '../store/useStore';
@@ -18,25 +18,29 @@ export function useFirestoreSync() {
   const { user } = useAuth();
   const hydrate = useGardenStore((s) => s.hydrate);
   const reset = useGardenStore((s) => s.reset);
-  const loaded = useRef(false);
+  const loadedRef = useRef(false);
+  const [ready, setReady] = useState(false);
 
   // Load from Firestore on sign-in; reset store on sign-out
   useEffect(() => {
     if (!user) {
-      if (loaded.current) {
+      if (loadedRef.current) {
         reset();
-        loaded.current = false;
+        loadedRef.current = false;
+        setReady(false);
       }
       return;
     }
 
-    loaded.current = false;
+    loadedRef.current = false;
+    setReady(false);
     const docRef = doc(db, 'users', user.uid, 'data', 'gardenData');
     getDoc(docRef).then((snap) => {
       if (snap.exists()) {
         hydrate(snap.data() as Parameters<typeof hydrate>[0]);
       }
-      loaded.current = true;
+      loadedRef.current = true;
+      setReady(true);
     });
   }, [user]);
 
@@ -45,7 +49,7 @@ export function useFirestoreSync() {
     if (!user) return;
 
     const syncToFirestore = debounce((state: GardenStoreData) => {
-      if (!loaded.current) return;
+      if (!loadedRef.current) return;
       const { settings, plantings, tasks, inventory, journalEntries, customPlants } = state;
       const docRef = doc(db, 'users', user.uid, 'data', 'gardenData');
       setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants });
@@ -57,4 +61,6 @@ export function useFirestoreSync() {
 
     return () => unsubscribe();
   }, [user]);
+
+  return { ready };
 }

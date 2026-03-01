@@ -11,22 +11,22 @@ const STEPS = ['welcome', 'location', 'crops', 'complete'] as const;
 type Step = typeof STEPS[number];
 
 const POPULAR_CROPS = [
-  { id: 'cherokee-purple-tomato', emoji: '🍅' },
-  { id: 'california-wonder-bell-pepper', emoji: '🫑' },
-  { id: 'straight-eight-cucumber', emoji: '🥒' },
-  { id: 'black-beauty-zucchini', emoji: '🥬' },
-  { id: 'blue-lake-bush-bean', emoji: '🫘' },
-  { id: 'sugar-snap-pea', emoji: '🌱' },
-  { id: 'buttercrunch-lettuce', emoji: '🥗' },
-  { id: 'genovese-basil', emoji: '🌿' },
-  { id: 'benary-giant-zinnia', emoji: '🌸' },
-  { id: 'mammoth-sunflower', emoji: '🌻' },
-  { id: 'cosmos-sensation-mix', emoji: '💐' },
-  { id: 'african-marigold', emoji: '🌼' },
-  { id: 'lacinato-kale', emoji: '🥬' },
-  { id: 'butternut-squash', emoji: '🎃' },
-  { id: 'detroit-dark-red-beet', emoji: '🫚' },
-  { id: 'dahlia-mixed', emoji: '🌺' },
+  { id: 'tomato-cherry', emoji: '🍅' },
+  { id: 'tomato-beefsteak', emoji: '🍅' },
+  { id: 'bell-pepper', emoji: '🫑' },
+  { id: 'cucumber', emoji: '🥒' },
+  { id: 'zucchini', emoji: '🥬' },
+  { id: 'green-beans', emoji: '🫘' },
+  { id: 'peas', emoji: '🌱' },
+  { id: 'lettuce', emoji: '🥗' },
+  { id: 'kale', emoji: '🥬' },
+  { id: 'basil', emoji: '🌿' },
+  { id: 'zinnia', emoji: '🌸' },
+  { id: 'sunflower', emoji: '🌻' },
+  { id: 'cosmos', emoji: '💐' },
+  { id: 'marigold', emoji: '🌼' },
+  { id: 'winter-squash', emoji: '🎃' },
+  { id: 'dahlia', emoji: '🌺' },
 ].map((crop) => {
   const seed = seeds.find((s) => s.id === crop.id);
   return seed ? { ...crop, seed } : null;
