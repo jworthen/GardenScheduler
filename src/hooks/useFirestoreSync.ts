@@ -35,13 +35,19 @@ export function useFirestoreSync() {
     loadedRef.current = false;
     setReady(false);
     const docRef = doc(db, 'users', user.uid, 'data', 'gardenData');
-    getDoc(docRef).then((snap) => {
-      if (snap.exists()) {
-        hydrate(snap.data() as Parameters<typeof hydrate>[0]);
-      }
-      loadedRef.current = true;
-      setReady(true);
-    });
+    getDoc(docRef)
+      .then((snap) => {
+        if (snap.exists()) {
+          hydrate(snap.data() as Parameters<typeof hydrate>[0]);
+        }
+      })
+      .catch(() => {
+        // Firestore read failed — proceed with default store state
+      })
+      .finally(() => {
+        loadedRef.current = true;
+        setReady(true);
+      });
   }, [user]);
 
   // Write to Firestore whenever store state changes (debounced)
