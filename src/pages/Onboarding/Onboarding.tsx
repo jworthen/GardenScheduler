@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Leaf, MapPin, Sprout, Calendar, Check } from 'lucide-react';
 import clsx from 'clsx';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { useAuth } from '../../contexts/AuthContext';
 import { useGardenStore } from '../../store/useStore';
 import { lookupFrostDatesByZip, lookupFrostDatesByState, US_STATES, zoneData } from '../../data/frostDates';
 import { seeds } from '../../data/seeds';
@@ -34,6 +37,7 @@ const POPULAR_CROPS = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { setLocation, completeOnboarding, addPlanting, getAllSeeds } = useGardenStore();
 
   const [step, setStep] = useState<Step>('welcome');
@@ -111,6 +115,22 @@ export default function Onboarding() {
       }
     });
     completeOnboarding();
+
+    // Write immediately — don't rely on the debounced sync so a quick
+    // page refresh can't race past the save.
+    if (user) {
+      const { settings, plantings, tasks, inventory, journalEntries, customPlants } =
+        useGardenStore.getState();
+      setDoc(doc(db, 'users', user.uid, 'data', 'gardenData'), {
+        settings,
+        plantings,
+        tasks,
+        inventory,
+        journalEntries,
+        customPlants,
+      });
+    }
+
     navigate('/');
   };
 
