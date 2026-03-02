@@ -53,33 +53,35 @@ export default function SeedDatabase() {
   const scheduledSeedIds = new Set(plantings.map((p) => p.seedId));
 
   const filtered = useMemo(() => {
-    return allSeeds.filter((seed) => {
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !seed.commonName.toLowerCase().includes(q) &&
-          !seed.botanicalName.toLowerCase().includes(q) &&
-          !(seed.subcategory?.toLowerCase().includes(q)) &&
-          !(seed.growingNotes?.toLowerCase().includes(q))
-        ) {
-          return false;
+    return allSeeds
+      .filter((seed) => {
+        if (search) {
+          const q = search.toLowerCase();
+          if (
+            !seed.commonName.toLowerCase().includes(q) &&
+            !seed.botanicalName.toLowerCase().includes(q) &&
+            !(seed.subcategory?.toLowerCase().includes(q)) &&
+            !(seed.growingNotes?.toLowerCase().includes(q))
+          ) {
+            return false;
+          }
         }
-      }
-      if (selectedCategory !== 'all' && seed.category !== selectedCategory) return false;
-      if (selectedLight !== 'all' && seed.lightRequirement !== selectedLight) return false;
-      if (selectedFrost !== 'all' && seed.frostTolerance !== selectedFrost) return false;
-      return true;
-    });
+        if (selectedCategory !== 'all' && seed.category !== selectedCategory) return false;
+        if (selectedLight !== 'all' && seed.lightRequirement !== selectedLight) return false;
+        if (selectedFrost !== 'all' && seed.frostTolerance !== selectedFrost) return false;
+        return true;
+      })
+      .sort((a, b) => a.commonName.localeCompare(b.commonName));
   }, [allSeeds, search, selectedCategory, selectedLight, selectedFrost]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, Seed[]> = {};
     filtered.forEach((seed) => {
-      const key = seed.category;
+      const key = seed.subcategory || getCategoryLabel(seed.category);
       if (!groups[key]) groups[key] = [];
       groups[key].push(seed);
     });
-    return groups;
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered]);
 
   const hasFilters = selectedCategory !== 'all' || selectedLight !== 'all' || selectedFrost !== 'all' || search;
@@ -212,14 +214,15 @@ export default function SeedDatabase() {
           )}
         </div>
 
-        {/* Seed cards - grouped by category if not filtered */}
+        {/* Seed cards */}
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <Search className="mx-auto mb-3 opacity-30" size={40} />
             <p className="text-lg font-medium">No plants found</p>
             <p className="text-sm mt-1">Try adjusting your search or filters</p>
           </div>
-        ) : selectedCategory !== 'all' || search ? (
+        ) : search ? (
+          // Flat alphabetical list when searching
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((seed) => (
               <SeedCard
@@ -232,30 +235,27 @@ export default function SeedDatabase() {
             ))}
           </div>
         ) : (
+          // Two-level grouped view: subcategory → variety
           <div className="space-y-8">
-            {CATEGORIES.slice(1).map(({ value, label, emoji }) => {
-              const group = grouped[value];
-              if (!group || group.length === 0) return null;
-              return (
-                <div key={value}>
-                  <h2 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <span>{emoji}</span> {label}
-                    <span className="text-sm font-normal text-gray-400">({group.length})</span>
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {group.map((seed) => (
-                      <SeedCard
-                        key={seed.id}
-                        seed={seed}
-                        isScheduled={scheduledSeedIds.has(seed.id)}
-                        onView={setSelectedSeed}
-                        onAddToCalendar={setCalendarSeed}
-                      />
-                    ))}
-                  </div>
+            {grouped.map(([groupName, seeds]) => (
+              <div key={groupName}>
+                <h2 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span>{seeds[0].icon || '🌱'}</span> {groupName}
+                  <span className="text-sm font-normal text-gray-400">({seeds.length})</span>
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {seeds.map((seed) => (
+                    <SeedCard
+                      key={seed.id}
+                      seed={seed}
+                      isScheduled={scheduledSeedIds.has(seed.id)}
+                      onView={setSelectedSeed}
+                      onAddToCalendar={setCalendarSeed}
+                    />
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>
