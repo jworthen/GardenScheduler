@@ -9,8 +9,10 @@ import {
   Wrench,
   Settings,
   Leaf,
+  LogOut,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -23,6 +25,12 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const { user, signOut } = useAuth();
+
+  const initials = user?.displayName
+    ? user.displayName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
   return (
     <div className="flex flex-col h-full bg-white border-r border-stone-200">
       {/* Logo */}
@@ -69,7 +77,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Settings at bottom */}
-      <div className="px-3 pb-4 border-t border-stone-100 pt-3">
+      <div className="px-3 pb-2 border-t border-stone-100 pt-3">
         <NavLink
           to="/settings"
           className={({ isActive }) =>
@@ -91,6 +99,30 @@ export default function Sidebar() {
             </>
           )}
         </NavLink>
+      </div>
+
+      {/* User profile */}
+      <div className="px-3 pb-4 pt-2 border-t border-stone-100">
+        <div className="flex items-center gap-2 px-2 py-2">
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-garden-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-semibold">{initials}</span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{user?.displayName ?? 'User'}</p>
+            <p className="text-xs text-gray-500 truncate">{user?.email ?? ''}</p>
+          </div>
+          <button
+            onClick={signOut}
+            title="Sign out"
+            className="flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-stone-100 transition-colors"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
