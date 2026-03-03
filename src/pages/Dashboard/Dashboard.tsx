@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Calendar, CheckSquare, Package, Sprout, AlertTriangle, ChevronRight, Leaf } from 'lucide-react';
 import { useGardenStore } from '../../store/useStore';
+import { useAuth } from '../../contexts/AuthContext';
 import { formatDisplayDate, formatDisplayDateShort, parseMMDD, getTaskIcon } from '../../utils/dateCalculations';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const firstName = user?.displayName?.split(' ')[0] ?? 'Gardener';
   const {
     settings,
     plantings,
@@ -43,7 +46,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              {getGreeting()}, Gardener! 🌿
+              {getGreeting()}, {firstName}! 🌿
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {format(today, 'EEEE, MMMM d, yyyy')}
