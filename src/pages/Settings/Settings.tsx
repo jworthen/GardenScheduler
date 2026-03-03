@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Settings as SettingsIcon, MapPin, Bell, Palette, Download, Trash2, AlertTriangle } from 'lucide-react';
 import { useGardenStore } from '../../store/useStore';
-import { lookupFrostDatesByZip, lookupFrostDatesByState, US_STATES, zoneData } from '../../data/frostDates';
+import { lookupFrostDatesByZip, zoneData } from '../../data/frostDates';
 import PageHeader from '../../components/common/PageHeader';
 
 export default function Settings() {
@@ -97,25 +97,6 @@ export default function Settings() {
                   📍 {location.city}, {location.state}
                 </p>
               )}
-            </div>
-
-            <div>
-              <label className="label">State</label>
-              <select
-                className="input"
-                value={location.state || ''}
-                onChange={(e) => {
-                  const result = lookupFrostDatesByState(e.target.value);
-                  if (result) {
-                    setLocation({ state: e.target.value, zone: result.zone, lastSpringFrost: result.lastSpringFrost, firstFallFrost: result.firstFallFrost });
-                    setSaved(true);
-                    setTimeout(() => setSaved(false), 2000);
-                  }
-                }}
-              >
-                <option value="">Select state...</option>
-                {US_STATES.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
-              </select>
             </div>
 
             <div>
