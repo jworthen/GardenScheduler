@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBQiEQEegnLBCZlWc1nB3xCx_IC4PG_M4o",
-  authDomain: "gardenscheduler-a34df.firebaseapp.com",
-  projectId: "gardenscheduler-a34df",
-  storageBucket: "gardenscheduler-a34df.firebasestorage.app",
-  messagingSenderId: "751588654100",
-  appId: "1:751588654100:web:5172e4edb2c91f473c3b01",
-  measurementId: "G-GH2BNZH90V",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 export const app = initializeApp(firebaseConfig);
