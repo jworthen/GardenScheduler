@@ -9,7 +9,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Seed, SeedRequest, PlantCategory } from '../types';
+import { Seed, SeedRequest, PlantCategory, LightRequirement } from '../types';
 
 // Firestore security rules needed:
 // seedRequests: authenticated users can create (userId == request.userId),

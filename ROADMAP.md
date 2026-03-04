@@ -207,7 +207,7 @@ Let users send feature suggestions, bug reports, or general feedback without lea
 ---
 
 ## Feature 9: User-Requested Database Additions
-**No dependencies — standalone feature.**
+`[~]` **Mostly complete — one item remains.**
 
 Allow users to request that a new seed variety be added to the database. The user provides the type and variety; we research and populate the data, then make it available to everyone.
 
@@ -224,12 +224,12 @@ Allow users to request that a new seed variety be added to the database. The use
 - Minimal required fields: a request must include at minimum plant type and variety name; freeform "additional info" is optional
 
 ### Scope
-- [ ] Request submission form (type + variety + optional notes)
-- [ ] Duplicate check against existing database entries on submission
-- [ ] Admin review queue UI (approve / reject / request more info)
-- [ ] Automated pre-population: attempt to fetch days-to-maturity, spacing, depth, etc. from known sources to reduce admin work
+- [x] Request submission form (type + variety + optional notes)
+- [x] Duplicate check against existing database entries on submission
+- [x] Admin review queue UI (approve / reject / request more info)
+- [x] Automated pre-population via OpenFarm API — "Auto-fill" button in the approve modal fetches botanical name, growing notes, light requirement, sowing method, and spacing; admin can edit before saving
+- [x] Rate limiting: 5 requests per user per day
 - [ ] Email/notification to user when their request is approved or rejected
-- [ ] Rate limiting per user account (or IP for non-authenticated users)
 
 ---
 
