@@ -156,24 +156,6 @@ Close the loop on the growing cycle by letting users record what they actually g
 
 ---
 
-## Feature 7: Crop Rotation Tracking
-**No dependencies — can be built using existing planting data.**
-**Inspired by: GrowVeg (5-year rotation), VegPlotter.**
-
-Prevent soil depletion and disease buildup by automatically tracking which plant families have been in each bed and warning when a crop is placed back too soon.
-
-### How it works
-1. Each planting is tagged with its plant family (nightshades, brassicas, legumes, roots, alliums, cucurbits, etc.)
-2. When logging a new planting in a named bed or area, the app checks previous years and warns if the same family was there recently
-3. A rotation history view shows a grid of bed × year so you can see the full rotation at a glance
-
-### Scope
-- [ ] Plant family field added to each seed in the database (most already have category)
-- [ ] Bed/area field on planting records (currently optional notes field — promote to a proper field)
-- [ ] Rotation history view: bed rows × year columns, color-coded by plant family
-- [ ] Warning when adding a planting to a bed that had the same family within the last 2–3 years
-- [ ] Optional: suggested crop to follow based on prior family (e.g. legume after brassica to fix nitrogen)
-
 ---
 
 ## Feature 8: Photo Journaling
@@ -284,6 +266,86 @@ Feature 1 (Accounts & Hosting)
 
 Standalone (no accounts needed):
     ├── Feature 6 (Harvest Tracking)
-    ├── Feature 7 (Crop Rotation Tracking)
-    └── Feature 9 (Companion Planting)
+    ├── Feature 9 (Companion Planting)
+    ├── Feature 12 (Database Addition Requests)
+    ├── Feature 13 (Seed Cell Planner)
+    └── Feature 14 (In-App Feedback)
 ```
+
+---
+
+## Feature 12: User-Requested Database Additions
+**No dependencies — standalone feature.**
+
+Allow users to request that a new seed variety be added to the database. The user provides the type and variety; we research and populate the data, then make it available to everyone.
+
+### How it works
+1. User submits a request form with the plant type (e.g. "Tomato") and variety name (e.g. "Mortgage Lifter")
+2. The request is queued for review — either manually by an admin or via an automated lookup pipeline (seed company sites, USDA GRIN, etc.)
+3. Once verified and populated, the variety is added to the shared database and the requesting user is notified
+
+### Guardrails
+- Duplicate detection: check if the variety already exists before accepting the request
+- Rate limiting: cap requests per user per day to prevent spam
+- Admin review queue: all new entries require approval before going live — no user can directly write to the seed database
+- Flagging system: existing users can flag incorrect or suspicious entries for re-review
+- Minimal required fields: a request must include at minimum plant type and variety name; freeform "additional info" is optional
+
+### Scope
+- [ ] Request submission form (type + variety + optional notes)
+- [ ] Duplicate check against existing database entries on submission
+- [ ] Admin review queue UI (approve / reject / request more info)
+- [ ] Automated pre-population: attempt to fetch days-to-maturity, spacing, depth, etc. from known sources to reduce admin work
+- [ ] Email/notification to user when their request is approved or rejected
+- [ ] Rate limiting per user account (or IP for non-authenticated users)
+
+---
+
+## Feature 13: Seed Cell Planner
+**No dependencies — standalone feature.**
+
+Give users a visual, printable map of a seed tray or cell flat. The user defines the grid dimensions, drags seeds from their stash onto individual cells, and saves or prints the layout so they always know what's in which cell.
+
+### How it works
+1. User creates a new cell plan and enters the grid size (e.g. 6 columns × 30 rows)
+2. The app renders a grid of labeled cells
+3. Seeds from the user's stash appear in a sidebar — user drags and drops a seed variety onto one or more cells
+4. The saved plan is stored against the user's account (or locally for non-authenticated users) so they can reference it digitally
+5. A print view renders a clean, high-contrast grid suitable for printing and sticking to the shelf or tray
+
+### Scope
+- [ ] Grid configuration: columns × rows, optional cell size label (e.g. "72-cell flat")
+- [ ] Drag-and-drop seed assignment from stash sidebar onto individual cells
+- [ ] Multi-select: drag to paint a range of cells with the same variety
+- [ ] Cell labels: auto-filled with variety name; optionally show sow date
+- [ ] Save/load named plans (e.g. "Spring 2026 — Greenhouse Flat 1")
+- [ ] Print view: clean grid, variety name in each cell, legend at the bottom, date printed in header
+- [ ] Color coding: each variety gets a distinct color for quick visual scanning
+
+---
+
+## Feature 14: In-App User Feedback & Suggestions
+**No dependencies — standalone feature.**
+
+Let users send feature suggestions, bug reports, or general feedback without leaving the app. Lightweight and low-friction — a single form that routes to a moderated inbox.
+
+### How it works
+1. A persistent "Send Feedback" entry point lives in the app (footer link or help menu)
+2. User selects a category (Bug report / Feature suggestion / General feedback), writes a short message, and submits
+3. Submissions land in an admin inbox; popular or recurring suggestions can be surfaced to inform the roadmap
+
+### Guardrails
+- Rate limiting per user/IP to prevent spam
+- Category required (reduces noise, helps triage)
+- No PII collected beyond what the user voluntarily includes in the message
+- No public-facing voting or comment threads in v1 — keep it simple and one-directional first
+
+### Scope
+- [ ] Feedback button/link accessible from all pages
+- [ ] Submission form: category selector + freeform text (500 char limit)
+- [ ] Rate limit: max 5 submissions per user per day
+- [ ] Admin inbox view: list of submissions filterable by category and date
+- [ ] Auto-reply email acknowledging receipt (optional but friendly)
+- [ ] Optional in v2: upvoting / "me too" on surfaced suggestions
+
+---
