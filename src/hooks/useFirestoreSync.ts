@@ -59,18 +59,37 @@ export function useFirestoreSync() {
   useEffect(() => {
     if (!user) return;
 
-    const syncToFirestore = debounce((state: GardenStoreData) => {
+    const pendingRef = { state: null as GardenStoreData | null };
+
+    function writeNow(state: GardenStoreData) {
       if (!loadedRef.current) return;
       const { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans } = state;
-      const docRef = doc(db, 'users', user.uid, 'data', 'gardenData');
+      const docRef = doc(db, 'users', user!.uid, 'data', 'gardenData');
       setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans });
+    }
+
+    const syncToFirestore = debounce((state: GardenStoreData) => {
+      pendingRef.state = null;
+      writeNow(state);
     }, 1500);
 
     const unsubscribe = useGardenStore.subscribe((state) => {
+      pendingRef.state = state;
       syncToFirestore(state);
     });
 
-    return () => unsubscribe();
+    // Flush any pending write synchronously before the page unloads
+    function handleBeforeUnload() {
+      if (pendingRef.state) {
+        writeNow(pendingRef.state);
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [user]);
 
   return { firestoreReady };
