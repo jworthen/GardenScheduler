@@ -226,17 +226,18 @@ function InventoryCard({ item, onEdit, onRemove, onStatusChange }: InventoryCard
 }
 
 // ---------------------------------------------------------------------------
-// Seed combobox — typeahead with category › subcategory › variety grouping
+// Seed link combobox — search the database and link a seedId without
+// touching the variety name the user typed
 // ---------------------------------------------------------------------------
 
-interface SeedComboboxProps {
+interface SeedLinkComboboxProps {
   seeds: Seed[];
-  value: string;
   seedId: string;
-  onChange: (varietyName: string, seedId: string, openPollinated: boolean) => void;
+  onChange: (seedId: string, openPollinated: boolean) => void;
 }
 
-function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
+function SeedLinkCombobox({ seeds, seedId, onChange }: SeedLinkComboboxProps) {
+  const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -250,8 +251,10 @@ function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const linked = seeds.find((s) => s.id === seedId);
+
   const suggestions = useMemo(() => {
-    const q = value.trim().toLowerCase();
+    const q = query.trim().toLowerCase();
     if (!q) return [];
     return seeds.filter(
       (s) =>
@@ -259,9 +262,8 @@ function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
         s.subcategory?.toLowerCase().includes(q) ||
         s.botanicalName?.toLowerCase().includes(q),
     );
-  }, [seeds, value]);
+  }, [seeds, query]);
 
-  // Group suggestions: category → subcategory → seeds
   const grouped = useMemo(() => {
     const map = new Map<string, Map<string, Seed[]>>();
     for (const seed of suggestions) {
@@ -275,108 +277,103 @@ function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
     return map;
   }, [suggestions]);
 
-  const linked = seeds.find((s) => s.id === seedId);
-
   return (
     <div ref={containerRef} className="relative">
-      <label className="label">Variety Name *</label>
-      <div className="relative">
-        <input
-          type="text"
-          className="input pr-8"
-          value={value}
-          placeholder="Search the database or type a variety name…"
-          onChange={(e) => { onChange(e.target.value, '', false); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
-          autoComplete="off"
-        />
-        {value && (
-          <button
-            type="button"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            onMouseDown={(e) => { e.preventDefault(); onChange('', '', false); setOpen(false); }}
-            tabIndex={-1}
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
+      <label className="label">Link to Database Seed <span className="text-gray-400 font-normal">(optional)</span></label>
 
-      {/* Linked seed breadcrumb */}
-      {linked && (
-        <div className="mt-1 flex items-center gap-1 text-xs text-garden-700">
+      {linked ? (
+        // Linked state: show breadcrumb + unlink button
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-garden-300 bg-garden-50">
           <span>{linked.icon ?? '🌱'}</span>
-          <span className="font-medium">{getCategoryLabel(linked.category)}</span>
+          <span className="text-xs text-garden-700 font-medium">{getCategoryLabel(linked.category)}</span>
           {linked.subcategory && (
             <>
               <ChevronRight size={10} className="text-gray-400" />
-              <span className="font-medium">{linked.subcategory}</span>
+              <span className="text-xs text-garden-700 font-medium">{linked.subcategory}</span>
             </>
           )}
           <ChevronRight size={10} className="text-gray-400" />
-          <span>{linked.commonName}</span>
-          <span className="text-gray-400 italic ml-0.5">— linked to database</span>
-        </div>
-      )}
-
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-xl shadow-lg max-h-72 overflow-y-auto">
-          {value.trim() === '' ? (
-            <p className="px-3 py-3 text-sm text-gray-400">Start typing to search the seed database…</p>
-          ) : suggestions.length === 0 ? (
-            <p className="px-3 py-3 text-sm text-gray-400">
-              No matches — "{value}" will be saved as a custom variety.
-            </p>
-          ) : (
-            Array.from(grouped).flatMap(([category, subMap]) =>
-              Array.from(subMap).map(([subcategory, groupSeeds]) => (
-                <div key={`${category}-${subcategory}`}>
-                  <div className="px-3 py-1.5 bg-stone-50 border-b border-stone-100 flex items-center gap-1 text-xs font-semibold text-gray-500">
-                    <span>{category}</span>
-                    {subcategory && (
-                      <>
-                        <ChevronRight size={10} className="text-gray-400" />
-                        <span>{subcategory}</span>
-                      </>
-                    )}
-                  </div>
-                  {groupSeeds.map((seed) => (
-                    <button
-                      key={seed.id}
-                      type="button"
-                      className={clsx(
-                        'w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-garden-50 transition-colors',
-                        seedId === seed.id && 'bg-garden-50 text-garden-700',
-                      )}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        onChange(seed.commonName, seed.id, seed.openPollinated ?? false);
-                        setOpen(false);
-                      }}
-                    >
-                      <span>{seed.icon ?? '🌱'}</span>
-                      <span className="font-medium">{seed.commonName}</span>
-                      {seed.botanicalName && (
-                        <span className="text-gray-400 italic text-xs ml-auto truncate max-w-[40%]">
-                          {seed.botanicalName}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )),
-            )
+          <span className="text-xs text-garden-800">{linked.commonName}</span>
+          {linked.botanicalName && (
+            <span className="text-xs text-gray-400 italic ml-0.5 truncate">{linked.botanicalName}</span>
           )}
-          {value.trim() &&
-            !suggestions.some(
-              (s) => s.commonName.toLowerCase() === value.trim().toLowerCase(),
-            ) && (
-              <div className="px-3 py-2 text-xs text-gray-400 border-t border-stone-100">
-                Can't find it? Type a name and save — or add it to the seed database first.
-              </div>
-            )}
+          <button
+            type="button"
+            className="ml-auto text-xs text-gray-400 hover:text-red-500 transition-colors"
+            onClick={() => onChange('', false)}
+          >
+            Unlink
+          </button>
+        </div>
+      ) : (
+        // Unlinked state: search input + dropdown
+        <div className="relative">
+          <input
+            type="text"
+            className="input pr-8"
+            value={query}
+            placeholder="Search seed database to link…"
+            onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
+            autoComplete="off"
+          />
+          {query && (
+            <button
+              type="button"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onMouseDown={(e) => { e.preventDefault(); setQuery(''); setOpen(false); }}
+              tabIndex={-1}
+            >
+              <X size={14} />
+            </button>
+          )}
+          {open && (
+            <div className="absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-xl shadow-lg max-h-72 overflow-y-auto">
+              {query.trim() === '' ? (
+                <p className="px-3 py-3 text-sm text-gray-400">Start typing to search the seed database…</p>
+              ) : suggestions.length === 0 ? (
+                <p className="px-3 py-3 text-sm text-gray-400">No matches for "{query}"</p>
+              ) : (
+                Array.from(grouped).flatMap(([category, subMap]) =>
+                  Array.from(subMap).map(([subcategory, groupSeeds]) => (
+                    <div key={`${category}-${subcategory}`}>
+                      <div className="px-3 py-1.5 bg-stone-50 border-b border-stone-100 flex items-center gap-1 text-xs font-semibold text-gray-500">
+                        <span>{category}</span>
+                        {subcategory && (
+                          <>
+                            <ChevronRight size={10} className="text-gray-400" />
+                            <span>{subcategory}</span>
+                          </>
+                        )}
+                      </div>
+                      {groupSeeds.map((seed) => (
+                        <button
+                          key={seed.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-garden-50 transition-colors"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            onChange(seed.id, seed.openPollinated ?? false);
+                            setQuery('');
+                            setOpen(false);
+                          }}
+                        >
+                          <span>{seed.icon ?? '🌱'}</span>
+                          <span className="font-medium">{seed.commonName}</span>
+                          {seed.botanicalName && (
+                            <span className="text-gray-400 italic text-xs ml-auto truncate max-w-[40%]">
+                              {seed.botanicalName}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )),
+                )
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -447,12 +444,22 @@ function InventoryFormModal({ isOpen, item, onClose, onSave, seeds }: InventoryF
       }
     >
       <div className="space-y-4">
-        <SeedCombobox
+        <div>
+          <label className="label">Variety Name *</label>
+          <input
+            type="text"
+            className="input"
+            value={form.varietyName}
+            placeholder="e.g. Purple Basil, Cherokee Purple Tomato…"
+            onChange={(e) => setForm((prev) => ({ ...prev, varietyName: e.target.value }))}
+            autoComplete="off"
+          />
+        </div>
+        <SeedLinkCombobox
           seeds={seeds}
-          value={form.varietyName}
           seedId={form.seedId}
-          onChange={(varietyName, seedId, openPollinated) => {
-            setForm((prev) => ({ ...prev, varietyName, seedId, openPollinated }));
+          onChange={(seedId, openPollinated) => {
+            setForm((prev) => ({ ...prev, seedId, openPollinated }));
           }}
         />
         <div className="grid grid-cols-2 gap-4">
