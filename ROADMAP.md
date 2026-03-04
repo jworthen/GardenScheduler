@@ -230,6 +230,7 @@ Allow users to request that a new seed variety be added to the database. The use
 - [x] Automated pre-population via OpenFarm API — "Auto-fill" button in the approve modal fetches botanical name, growing notes, light requirement, sowing method, and spacing; admin can edit before saving
 - [x] Rate limiting: 5 requests per user per day
 - [ ] Email/notification to user when their request is approved or rejected
+- [ ] Ability for users to submit corrections to existing seed database entries (e.g. wrong spacing, outdated growing notes) — routed to the same admin review queue as new-addition requests
 
 ---
 
