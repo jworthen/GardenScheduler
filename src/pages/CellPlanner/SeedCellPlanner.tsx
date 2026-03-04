@@ -1,11 +1,186 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Grid3X3, Plus, Trash2, Printer, ChevronRight, X, Eraser } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { Grid3X3, Plus, Trash2, Printer, ChevronRight, X, Eraser, Sprout } from 'lucide-react';
+import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
-import { CellPlan, PlantCategory } from '../../types';
+import { CellPlan, PlantCategory, Seed } from '../../types';
 import PageHeader from '../../components/common/PageHeader';
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
+// ---------------------------------------------------------------------------
+// Start Plantings modal
+// ---------------------------------------------------------------------------
+
+interface StartPlantingsModalProps {
+  plan: CellPlan;
+  allSeeds: Seed[];
+  addPlanting: (seedId: string, seed: Seed, options?: { quantity?: number; bedLocation?: string; year?: number }) => void;
+  onClose: () => void;
+}
+
+function StartPlantingsModal({ plan, allSeeds, addPlanting, onClose }: StartPlantingsModalProps) {
+  const seedGroups = useMemo(() => {
+    const map = new Map<string, { seedId: string; varietyName: string; category: PlantCategory; count: number }>();
+    Object.values(plan.cells).forEach((cell) => {
+      const key = cell.seedId ?? cell.varietyName ?? '';
+      if (!key) return;
+      if (!map.has(key)) {
+        map.set(key, {
+          seedId: cell.seedId ?? key,
+          varietyName: cell.varietyName ?? '',
+          category: (cell.category as PlantCategory) ?? 'vegetable',
+          count: 0,
+        });
+      }
+      map.get(key)!.count++;
+    });
+    return Array.from(map.values()).sort((a, b) => a.varietyName.localeCompare(b.varietyName));
+  }, [plan]);
+
+  const [checked, setChecked] = useState<Set<string>>(() => new Set(seedGroups.map((g) => g.seedId)));
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [bedLocation, setBedLocation] = useState(plan.name);
+
+  const allChecked = checked.size === seedGroups.length;
+
+  const handleCreate = () => {
+    seedGroups.forEach((group) => {
+      if (!checked.has(group.seedId)) return;
+
+      let seed = allSeeds.find((s) => s.id === group.seedId);
+      if (!seed) {
+        // Stub for unlinked custom seeds — no schedule dates will be generated
+        seed = {
+          id: group.seedId,
+          commonName: group.varietyName,
+          botanicalName: '',
+          plantType: 'annual',
+          category: group.category,
+          daysToGermination: { min: 5, max: 14 },
+          startIndoors: false,
+          directSow: true,
+          indoorStartWeeks: 0,
+          directSowWeeks: 0,
+          lightRequirement: 'full-sun',
+          spacing: 6,
+          plantingDepth: 0.25,
+          coldStratification: false,
+          frostTolerance: 'tender',
+          waterNeeds: 'medium',
+          growingNotes: '',
+          color: CATEGORY_ACCENT[group.category],
+          isCustom: true,
+        };
+      }
+
+      addPlanting(group.seedId, seed, {
+        quantity: group.count,
+        bedLocation: bedLocation.trim() || undefined,
+        year,
+      });
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] flex flex-col">
+        <h2 className="text-lg font-semibold text-gray-900">Start Plantings</h2>
+        <p className="text-sm text-gray-500 mt-1 mb-4">
+          Each seed in <span className="font-medium text-gray-700">{plan.name}</span> becomes a
+          tracked planting. Cell count becomes quantity.
+        </p>
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Year</label>
+            <input
+              type="number"
+              className="input text-sm"
+              value={year}
+              onChange={(e) => setYear(parseInt(e.target.value) || new Date().getFullYear())}
+              min={2020}
+              max={2040}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Bed / Location</label>
+            <input
+              type="text"
+              className="input text-sm"
+              value={bedLocation}
+              onChange={(e) => setBedLocation(e.target.value)}
+              placeholder="Optional"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Seeds in this flat
+          </span>
+          <button
+            type="button"
+            onClick={() => setChecked(allChecked ? new Set() : new Set(seedGroups.map((g) => g.seedId)))}
+            className="text-xs text-garden-600 hover:underline"
+          >
+            {allChecked ? 'Deselect all' : 'Select all'}
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 -mx-1 px-1 space-y-1">
+          {seedGroups.map((group) => {
+            const hasDbLink = !group.seedId.startsWith('inv:');
+            return (
+              <label
+                key={group.seedId}
+                className={clsx(
+                  'flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors',
+                  checked.has(group.seedId) ? 'bg-garden-50' : 'hover:bg-stone-50',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked.has(group.seedId)}
+                  onChange={(e) => {
+                    const next = new Set(checked);
+                    if (e.target.checked) next.add(group.seedId);
+                    else next.delete(group.seedId);
+                    setChecked(next);
+                  }}
+                  className="rounded flex-shrink-0"
+                />
+                <span
+                  className="w-2 h-2 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: CATEGORY_ACCENT[group.category] }}
+                />
+                <span className="flex-1 text-sm text-gray-800">{group.varietyName}</span>
+                <span className="text-xs text-gray-400 flex-shrink-0">×{group.count}</span>
+                {!hasDbLink && (
+                  <span className="text-[10px] text-amber-600 flex-shrink-0">no schedule</span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-3 mt-5">
+          <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
+          <button
+            onClick={handleCreate}
+            disabled={checked.size === 0}
+            className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Sprout size={15} />
+            Start {checked.size} Planting{checked.size !== 1 ? 's' : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const CATEGORY_BG: Record<PlantCategory, string> = {
@@ -42,7 +217,7 @@ const FLAT_PRESETS = [
 ];
 
 export default function SeedCellPlanner() {
-  const { cellPlans, addCellPlan, updateCellPlan, removeCellPlan, inventory, getAllSeeds } =
+  const { cellPlans, addCellPlan, updateCellPlan, removeCellPlan, inventory, getAllSeeds, addPlanting } =
     useGardenStore();
 
   const [activePlanId, setActivePlanId] = useState<string | null>(
@@ -51,6 +226,7 @@ export default function SeedCellPlanner() {
   const [activeSeed, setActiveSeed] = useState<SeedOption | null>(null);
   const [isErasing, setIsErasing] = useState(false);
   const [showNewPlan, setShowNewPlan] = useState(false);
+  const [showStartPlantings, setShowStartPlantings] = useState(false);
   const [newName, setNewName] = useState('');
   const [newCols, setNewCols] = useState(9);
   const [newRows, setNewRows] = useState(8);
@@ -196,13 +372,24 @@ export default function SeedCellPlanner() {
         subtitle="Map out your seed trays and flats"
         icon="🌱"
         actions={
-          <button
-            onClick={() => window.print()}
-            className="btn-secondary flex items-center gap-2 print:hidden"
-          >
-            <Printer size={16} />
-            Print
-          </button>
+          <div className="flex items-center gap-2 print:hidden">
+            {activePlan && Object.keys(activePlan.cells).length > 0 && (
+              <button
+                onClick={() => setShowStartPlantings(true)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Sprout size={16} />
+                Start Plantings
+              </button>
+            )}
+            <button
+              onClick={() => window.print()}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Printer size={16} />
+              Print
+            </button>
+          </div>
         }
       />
 
@@ -513,6 +700,16 @@ export default function SeedCellPlanner() {
           </div>
         </aside>
       </div>
+
+      {/* ── Start plantings modal ── */}
+      {showStartPlantings && activePlan && (
+        <StartPlantingsModal
+          plan={activePlan}
+          allSeeds={allSeeds}
+          addPlanting={addPlanting}
+          onClose={() => setShowStartPlantings(false)}
+        />
+      )}
 
       {/* ── New plan dialog ── */}
       {showNewPlan && (
