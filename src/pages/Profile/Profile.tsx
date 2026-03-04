@@ -1,20 +1,42 @@
 import { useState } from 'react';
-import { User, Leaf } from 'lucide-react';
+import { User, Leaf, MapPin } from 'lucide-react';
 import { useGardenStore } from '../../store/useStore';
 import { useAuth } from '../../contexts/AuthContext';
+import { lookupFrostDatesByZip, zoneData } from '../../data/frostDates';
 import PageHeader from '../../components/common/PageHeader';
 
 export default function Profile() {
   const { user } = useAuth();
-  const { settings, updateSettings } = useGardenStore();
+  const { settings, updateSettings, setLocation } = useGardenStore();
   const [gardenName, setGardenName] = useState(settings.profile?.gardenName ?? '');
   const [units, setUnits] = useState<'imperial' | 'metric'>(settings.profile?.units ?? 'imperial');
+  const [zipInput, setZipInput] = useState(settings.location.zipCode || '');
   const [saved, setSaved] = useState(false);
+
+  const { location } = settings;
 
   const save = () => {
     updateSettings({ profile: { gardenName, units } });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleZipLookup = () => {
+    if (zipInput.length >= 5) {
+      const result = lookupFrostDatesByZip(zipInput);
+      if (result) {
+        setLocation({
+          zipCode: zipInput,
+          zone: result.zone,
+          lastSpringFrost: result.lastSpringFrost,
+          firstFallFrost: result.firstFallFrost,
+          city: result.city,
+          state: result.state,
+        });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    }
   };
 
   const initials = user?.displayName
@@ -28,7 +50,7 @@ export default function Profile() {
       <div className="px-4 sm:px-6 py-6 space-y-6 max-w-2xl">
         {saved && (
           <div className="bg-garden-50 border border-garden-200 text-garden-700 rounded-xl px-4 py-3 text-sm font-medium animate-fade-in">
-            ✓ Profile saved!
+            ✓ Saved!
           </div>
         )}
 
@@ -105,6 +127,66 @@ export default function Profile() {
             <button onClick={save} className="btn-primary text-sm">
               Save Profile
             </button>
+          </div>
+        </section>
+
+        {/* Location */}
+        <section className="card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin className="text-garden-600" size={18} />
+            <h2 className="font-bold text-gray-900">Location</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="label">ZIP Code</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="input flex-1"
+                  value={zipInput}
+                  onChange={(e) => setZipInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                  placeholder="Enter ZIP code"
+                />
+                <button
+                  onClick={handleZipLookup}
+                  disabled={zipInput.length < 5}
+                  className="btn-primary disabled:opacity-50 text-sm"
+                >
+                  Look Up
+                </button>
+              </div>
+              {location.city && location.state && (
+                <p className="text-xs text-garden-600 mt-1">
+                  📍 {location.city}, {location.state}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="label">USDA Hardiness Zone</label>
+              <select
+                className="input"
+                value={location.zone || 5}
+                onChange={(e) => {
+                  const z = Number(e.target.value);
+                  const zoneInfo = zoneData[z];
+                  setLocation({ zone: z, lastSpringFrost: zoneInfo.lastSpringFrost, firstFallFrost: zoneInfo.firstFallFrost });
+                  setSaved(true);
+                  setTimeout(() => setSaved(false), 2000);
+                }}
+              >
+                {Object.entries(zoneData).map(([z, info]) => (
+                  <option key={z} value={z}>
+                    Zone {z} — {info.description.split(':')[1]?.trim()}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                Full frost date details are in{' '}
+                <a href="/settings" className="text-garden-600 hover:underline">Settings</a>.
+              </p>
+            </div>
           </div>
         </section>
       </div>
