@@ -15,6 +15,7 @@ import Settings from './pages/Settings/Settings';
 import Profile from './pages/Profile/Profile';
 import WhatCanIPlant from './pages/Tools/WhatCanIPlant';
 import AdminSeedRequests from './pages/Admin/AdminSeedRequests';
+import SeedCellPlanner from './pages/CellPlanner/SeedCellPlanner';
 
 function AppRoutes() {
   const onboardingCompleted =
@@ -42,6 +43,7 @@ function AppRoutes() {
         <Route path="/tools" element={<WhatCanIPlant />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/cell-planner" element={<SeedCellPlanner />} />
         <Route path="/admin" element={<AdminSeedRequests />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

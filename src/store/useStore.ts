@@ -8,6 +8,7 @@ import {
   JournalEntry,
   Seed,
   PlantCategory,
+  CellPlan,
 } from '../types';
 import {
   calculatePlantingDates,
@@ -48,6 +49,7 @@ export interface GardenStoreData {
   inventory: InventoryItem[];
   journalEntries: JournalEntry[];
   customPlants: Seed[];
+  cellPlans: CellPlan[];
 }
 
 interface GardenStore extends GardenStoreData {
@@ -58,6 +60,7 @@ interface GardenStore extends GardenStoreData {
   inventory: InventoryItem[];
   journalEntries: JournalEntry[];
   customPlants: Seed[];
+  cellPlans: CellPlan[];
   // Community seeds (shared, loaded from Firestore, not persisted per-user)
   communitySeeds: Seed[];
   setCommunitySeeds: (seeds: Seed[]) => void;
@@ -99,6 +102,11 @@ interface GardenStore extends GardenStoreData {
   addCustomPlant: (plant: Omit<Seed, 'id'>) => Seed;
   removeCustomPlant: (id: string) => void;
 
+  // Cell planner
+  addCellPlan: (plan: CellPlan) => void;
+  updateCellPlan: (id: string, updates: Partial<CellPlan>) => void;
+  removeCellPlan: (id: string) => void;
+
   // Helpers
   getAllSeeds: () => Seed[];
   getSeedById: (id: string) => Seed | undefined;
@@ -115,6 +123,7 @@ interface GardenStore extends GardenStoreData {
     inventory: InventoryItem[];
     journalEntries: JournalEntry[];
     customPlants: Seed[];
+    cellPlans: CellPlan[];
   }>) => void;
   reset: () => void;
 }
@@ -128,6 +137,7 @@ export const useGardenStore = create<GardenStore>()(
       inventory: [],
       journalEntries: [],
       customPlants: [],
+      cellPlans: [],
       communitySeeds: [],
       setCommunitySeeds: (seeds) => set({ communitySeeds: seeds }),
 
@@ -353,6 +363,17 @@ export const useGardenStore = create<GardenStore>()(
           customPlants: state.customPlants.filter((p) => p.id !== id),
         })),
 
+      addCellPlan: (plan) =>
+        set((state) => ({ cellPlans: [...state.cellPlans, plan] })),
+
+      updateCellPlan: (id, updates) =>
+        set((state) => ({
+          cellPlans: state.cellPlans.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+        })),
+
+      removeCellPlan: (id) =>
+        set((state) => ({ cellPlans: state.cellPlans.filter((p) => p.id !== id) })),
+
       getAllSeeds: () => {
         const { customPlants, communitySeeds } = get();
         return [...defaultSeeds, ...communitySeeds, ...customPlants];
@@ -413,6 +434,7 @@ export const useGardenStore = create<GardenStore>()(
         inventory: data.inventory ?? state.inventory,
         journalEntries: data.journalEntries ?? state.journalEntries,
         customPlants: data.customPlants ?? state.customPlants,
+        cellPlans: data.cellPlans ?? state.cellPlans,
       })),
 
       reset: () => set({
@@ -422,6 +444,7 @@ export const useGardenStore = create<GardenStore>()(
         inventory: [],
         journalEntries: [],
         customPlants: [],
+        cellPlans: [],
         communitySeeds: [],
       }),
     }),

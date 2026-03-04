@@ -190,6 +190,23 @@ export interface FrostDateInfo {
   state?: string;
 }
 
+export interface CellPlanCell {
+  seedId?: string;
+  varietyName?: string;
+  category?: PlantCategory;
+  sowDate?: string;
+}
+
+export interface CellPlan {
+  id: string;
+  name: string;
+  cols: number;
+  rows: number;
+  cells: Record<string, CellPlanCell>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type SeedRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export interface SeedRequest {

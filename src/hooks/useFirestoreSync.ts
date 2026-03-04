@@ -61,9 +61,9 @@ export function useFirestoreSync() {
 
     const syncToFirestore = debounce((state: GardenStoreData) => {
       if (!loadedRef.current) return;
-      const { settings, plantings, tasks, inventory, journalEntries, customPlants } = state;
+      const { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans } = state;
       const docRef = doc(db, 'users', user.uid, 'data', 'gardenData');
-      setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants });
+      setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans });
     }, 1500);
 
     const unsubscribe = useGardenStore.subscribe((state) => {

@@ -6,6 +6,7 @@ import {
   CheckSquare,
   BookOpen,
   Package,
+  Grid3X3,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -14,14 +15,15 @@ const mobileNavItems = [
   { to: '/seeds', icon: Sprout, label: 'Seeds' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
-  { to: '/inventory', icon: Package, label: 'Seed Inventory' },
+  { to: '/inventory', icon: Package, label: 'Inventory' },
   { to: '/journal', icon: BookOpen, label: 'Journal' },
+  { to: '/cell-planner', icon: Grid3X3, label: 'Trays' },
 ];
 
 export default function MobileNav() {
   return (
     <nav className="mobile-nav md:hidden bg-white border-t border-stone-200 safe-area-inset-bottom">
-      <div className="grid grid-cols-6 py-1">
+      <div className="grid grid-cols-7 py-1">
         {mobileNavItems.map(({ to, icon: Icon, label, end }) => (
           <NavLink
             key={to}
