@@ -95,7 +95,28 @@ Monetize the app for users outside your personal network.
 
 ---
 
-## Dependency map
+## Feature 5: Multiple Gardens per User
+
+Allow a single user to manage more than one named garden (e.g. "Front Yard Beds", "Community Plot", "Greenhouse").
+
+### How it works
+1. User creates one or more gardens, each with its own name, location, and frost dates
+2. A garden switcher in the sidebar lets the user jump between gardens
+3. All plantings, tasks, inventory, and journal entries are scoped to the active garden
+4. Firestore path changes from `users/{uid}/data/gardenData` to `users/{uid}/gardens/{gardenId}/data`
+
+### Scope
+- [ ] Garden model: id, name, location (zone, frost dates), createdAt
+- [ ] Garden switcher UI in the sidebar (dropdown or list)
+- [ ] "New garden" flow (name + location, mirrors onboarding)
+- [ ] All store state scoped per garden; switching garden loads that garden's data from Firestore
+- [ ] Profile page lists all gardens with edit/delete options
+- [ ] Migrate existing single-garden data to the new multi-garden Firestore structure
+
+### Notes
+- Depends on Feature 1 (Accounts & Hosting) — multi-garden only makes sense with cloud sync
+- Free tier could cap at 1–2 gardens; paid tier gets unlimited (ties into Feature 4)
+
 
 ```
 Feature 1 (Accounts & Hosting)
