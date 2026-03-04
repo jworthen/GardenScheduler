@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Check, X, Clock, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
@@ -74,28 +74,43 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not-found'>('idle');
   const [lookupQuery, setLookupQuery] = useState(request.commonName);
+  const autoLookupRan = useRef(false);
 
   const set = (key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
   };
 
+  const applyLookupResult = (result: Awaited<ReturnType<typeof lookupPlantByName>>) => {
+    if (!result) { setLookupStatus('not-found'); return; }
+    setForm((prev) => ({
+      ...prev,
+      ...(result.botanicalName && { botanicalName: result.botanicalName }),
+      ...(result.growingNotes && { growingNotes: result.growingNotes }),
+      lightRequirement: result.lightRequirement,
+      startIndoors: result.startIndoors,
+      directSow: result.directSow,
+      ...(result.spacing !== null && { spacing: result.spacing }),
+    }));
+    setLookupStatus('found');
+  };
+
+  // Auto-run lookup on mount so the form is pre-filled when the admin opens it
+  useEffect(() => {
+    if (autoLookupRan.current) return;
+    autoLookupRan.current = true;
+    setLookingUp(true);
+    lookupPlantByName(request.commonName)
+      .then(applyLookupResult)
+      .finally(() => setLookingUp(false));
+  }, []);
+
   const handleLookup = async () => {
     setLookingUp(true);
     setLookupStatus('idle');
     try {
       const result = await lookupPlantByName(lookupQuery);
-      if (!result) { setLookupStatus('not-found'); return; }
-      setForm((prev) => ({
-        ...prev,
-        ...(result.botanicalName && { botanicalName: result.botanicalName }),
-        ...(result.growingNotes && { growingNotes: result.growingNotes }),
-        lightRequirement: result.lightRequirement,
-        startIndoors: result.startIndoors,
-        directSow: result.directSow,
-        ...(result.spacing !== null && { spacing: result.spacing }),
-      }));
-      setLookupStatus('found');
+      applyLookupResult(result);
     } finally {
       setLookingUp(false);
     }
