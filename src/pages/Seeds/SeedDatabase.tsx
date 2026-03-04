@@ -1,14 +1,17 @@
-import { useState, useMemo } from 'react';
-import { Search, Filter, Plus, X, SlidersHorizontal } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { Search, Plus, X, SlidersHorizontal, Send } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
-import { Seed, PlantCategory, LightRequirement } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { Seed, PlantCategory, LightRequirement, SeedRequest } from '../../types';
 import { getCategoryBgLight, getCategoryTextColor, getCategoryLabel, getCategoryColor } from '../../data/seeds';
 import { CategoryBadge, FrostBadge, LightBadge } from '../../components/common/Badge';
 import PageHeader from '../../components/common/PageHeader';
 import AddToCalendarModal from './AddToCalendarModal';
 import SeedDetailModal from './SeedDetailModal';
 import AddCustomPlantModal from './AddCustomPlantModal';
+import SeedRequestModal from './SeedRequestModal';
+import { getUserRequests } from '../../lib/seedRequests';
 
 const CATEGORIES: Array<{ value: PlantCategory | 'all'; label: string; emoji: string }> = [
   { value: 'all', label: 'All Plants', emoji: '🌿' },
@@ -39,6 +42,7 @@ const FROST_OPTIONS = [
 
 export default function SeedDatabase() {
   const { getAllSeeds, plantings } = useGardenStore();
+  const { user } = useAuth();
   const allSeeds = getAllSeeds();
 
   const [search, setSearch] = useState('');
@@ -49,6 +53,23 @@ export default function SeedDatabase() {
   const [selectedSeed, setSelectedSeed] = useState<Seed | null>(null);
   const [calendarSeed, setCalendarSeed] = useState<Seed | null>(null);
   const [showAddCustom, setShowAddCustom] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [myRequests, setMyRequests] = useState<SeedRequest[]>([]);
+  const [showMyRequests, setShowMyRequests] = useState(false);
+
+  const loadMyRequests = useCallback(async () => {
+    if (!user) return;
+    try {
+      const requests = await getUserRequests(user.uid);
+      setMyRequests(requests);
+    } catch {
+      // silently ignore
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadMyRequests();
+  }, [loadMyRequests]);
 
   const scheduledSeedIds = new Set(plantings.map((p) => p.seedId));
 
@@ -100,13 +121,67 @@ export default function SeedDatabase() {
         subtitle={`${allSeeds.length} varieties across all categories`}
         icon="🌱"
         actions={
-          <button onClick={() => setShowAddCustom(true)} className="btn-primary text-sm">
-            <Plus size={16} /> Add Custom
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowMyRequests((v) => !v)}
+              className={clsx('btn-secondary text-sm relative', myRequests.length > 0 && 'border-garden-400')}
+            >
+              <Send size={16} />
+              <span className="hidden sm:inline">My Requests</span>
+              {myRequests.filter((r) => r.status === 'pending').length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full text-white text-xs flex items-center justify-center">
+                  {myRequests.filter((r) => r.status === 'pending').length}
+                </span>
+              )}
+            </button>
+            <button onClick={() => setShowAddCustom(true)} className="btn-secondary text-sm">
+              <Plus size={16} /> Add Custom
+            </button>
+            <button onClick={() => setShowRequestModal(true)} className="btn-primary text-sm">
+              <Send size={16} /> Request Variety
+            </button>
+          </div>
         }
       />
 
       <div className="px-4 sm:px-6 py-4 space-y-4">
+        {/* My Requests panel */}
+        {showMyRequests && (
+          <div className="bg-white border border-stone-200 rounded-xl p-4 animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-800">My Variety Requests</h3>
+              <button onClick={() => setShowMyRequests(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={16} />
+              </button>
+            </div>
+            {myRequests.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No requests yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {myRequests.map((req) => (
+                  <div key={req.id} className="flex items-start justify-between gap-3 text-sm py-2 border-b border-stone-100 last:border-0">
+                    <div className="min-w-0">
+                      <span className="font-medium text-gray-800">{req.commonName}</span>
+                      <span className="ml-2 text-xs text-gray-400 capitalize">{req.category}</span>
+                      {req.reviewNotes && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{req.reviewNotes}</p>
+                      )}
+                    </div>
+                    <span className={clsx(
+                      'flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full',
+                      req.status === 'pending' && 'bg-amber-100 text-amber-700',
+                      req.status === 'approved' && 'bg-green-100 text-green-700',
+                      req.status === 'rejected' && 'bg-red-100 text-red-700',
+                    )}>
+                      {req.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Search */}
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -273,6 +348,11 @@ export default function SeedDatabase() {
       <AddCustomPlantModal
         isOpen={showAddCustom}
         onClose={() => setShowAddCustom(false)}
+      />
+      <SeedRequestModal
+        isOpen={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        onSuccess={loadMyRequests}
       />
     </div>
   );

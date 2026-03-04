@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useGardenStore, GardenStoreData } from '../store/useStore';
 import { useAuth } from '../contexts/AuthContext';
+import { getCommunitySeeds } from '../lib/seedRequests';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function debounce(fn: (...args: any[]) => void, delay: number) {
@@ -18,6 +19,7 @@ export function useFirestoreSync() {
   const { user } = useAuth();
   const hydrate = useGardenStore((s) => s.hydrate);
   const reset = useGardenStore((s) => s.reset);
+  const setCommunitySeeds = useGardenStore((s) => s.setCommunitySeeds);
   const loadedRef = useRef(false);
   const [firestoreReady, setFirestoreReady] = useState(false);
 
@@ -36,12 +38,14 @@ export function useFirestoreSync() {
     setFirestoreReady(false);
     loadedRef.current = false;
     const docRef = doc(db, 'users', user.uid, 'data', 'gardenData');
-    getDoc(docRef)
-      .then((snap) => {
+    Promise.all([
+      getDoc(docRef).then((snap) => {
         if (snap.exists()) {
           hydrate(snap.data() as Parameters<typeof hydrate>[0]);
         }
-      })
+      }),
+      getCommunitySeeds().then(setCommunitySeeds),
+    ])
       .catch(() => {
         // Firestore read failed — local (persisted) data is used as-is
       })

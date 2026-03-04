@@ -189,3 +189,18 @@ export interface FrostDateInfo {
   city?: string;
   state?: string;
 }
+
+export type SeedRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface SeedRequest {
+  id: string;
+  userId: string;
+  userEmail: string;
+  category: PlantCategory;
+  commonName: string;
+  notes: string;
+  status: SeedRequestStatus;
+  createdAt: number;
+  reviewNotes?: string;
+  reviewedAt?: number;
+}

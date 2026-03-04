@@ -58,6 +58,9 @@ interface GardenStore extends GardenStoreData {
   inventory: InventoryItem[];
   journalEntries: JournalEntry[];
   customPlants: Seed[];
+  // Community seeds (shared, loaded from Firestore, not persisted per-user)
+  communitySeeds: Seed[];
+  setCommunitySeeds: (seeds: Seed[]) => void;
 
   // Settings actions
   updateSettings: (updates: Partial<UserSettings>) => void;
@@ -125,6 +128,8 @@ export const useGardenStore = create<GardenStore>()(
       inventory: [],
       journalEntries: [],
       customPlants: [],
+      communitySeeds: [],
+      setCommunitySeeds: (seeds) => set({ communitySeeds: seeds }),
 
       updateSettings: (updates) =>
         set((state) => ({
@@ -349,13 +354,13 @@ export const useGardenStore = create<GardenStore>()(
         })),
 
       getAllSeeds: () => {
-        const { customPlants } = get();
-        return [...defaultSeeds, ...customPlants];
+        const { customPlants, communitySeeds } = get();
+        return [...defaultSeeds, ...communitySeeds, ...customPlants];
       },
 
       getSeedById: (id) => {
-        const { customPlants } = get();
-        return [...defaultSeeds, ...customPlants].find((s) => s.id === id);
+        const { customPlants, communitySeeds } = get();
+        return [...defaultSeeds, ...communitySeeds, ...customPlants].find((s) => s.id === id);
       },
 
       getPlantingsByMonth: (year, month) => {
@@ -417,6 +422,7 @@ export const useGardenStore = create<GardenStore>()(
         inventory: [],
         journalEntries: [],
         customPlants: [],
+        communitySeeds: [],
       }),
     }),
     { name: 'garden-store' }

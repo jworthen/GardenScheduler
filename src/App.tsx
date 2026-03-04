@@ -14,6 +14,7 @@ import GardenJournal from './pages/Journal/GardenJournal';
 import Settings from './pages/Settings/Settings';
 import Profile from './pages/Profile/Profile';
 import WhatCanIPlant from './pages/Tools/WhatCanIPlant';
+import AdminSeedRequests from './pages/Admin/AdminSeedRequests';
 
 function AppRoutes() {
   const onboardingCompleted =
@@ -41,6 +42,7 @@ function AppRoutes() {
         <Route path="/tools" element={<WhatCanIPlant />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<AdminSeedRequests />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
