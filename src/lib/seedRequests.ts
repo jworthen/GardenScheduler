@@ -143,22 +143,28 @@ async function fetchOpenFarm(query: string): Promise<OpenFarmLookupResult | null
 }
 
 /**
- * Looks up a plant on OpenFarm. If the exact query returns nothing, retries
- * with the last word then the first word (handles cases like "Basil Lettuce Leaf"
- * where the genus comes last, or where the variety prefix confuses the search).
+ * Looks up a plant on OpenFarm. Falls back through progressively simpler
+ * queries: punctuation-stripped full query → last word → first word.
+ * Punctuation is stripped from individual words so queries like
+ * "basil, lettuce leaf" don't send "basil," (with comma) to the API.
  */
 export async function lookupPlantByName(query: string): Promise<OpenFarmLookupResult | null> {
   try {
     const result = await fetchOpenFarm(query);
     if (result) return result;
 
-    const words = query.trim().split(/\s+/);
+    // Strip punctuation and try the cleaned full query (catches "basil, lettuce leaf" → "basil lettuce leaf")
+    const cleaned = query.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+    if (cleaned !== query.trim()) {
+      const byCleaned = await fetchOpenFarm(cleaned);
+      if (byCleaned) return byCleaned;
+    }
+
+    // Split cleaned query into words; try last word then first word
+    const words = cleaned.split(/\s+/).filter(Boolean);
     if (words.length > 1) {
-      // Try last word first (e.g. "Basil Lettuce Leaf" → "Basil" is last? No — try reversed order)
-      // Try last word (often the genus/common plant when variety adjectives come first)
       const byLast = await fetchOpenFarm(words[words.length - 1]);
       if (byLast) return byLast;
-      // Try first word
       const byFirst = await fetchOpenFarm(words[0]);
       if (byFirst) return byFirst;
     }
