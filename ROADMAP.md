@@ -121,6 +121,169 @@ Allow a single user to manage more than one named garden (e.g. "Front Yard Beds"
 ```
 Feature 1 (Accounts & Hosting)
     ├── Feature 2 (Seed Swap)
+    │       └── Feature 10 (Serendipity Labels)
     ├── Feature 3 (Plant Share)
-    └── Feature 4 (Payments)  ← also depends on 2 & 3 being worth paying for
+    ├── Feature 4 (Payments)  ← also depends on 2 & 3 being worth paying for
+    ├── Feature 5 (Multiple Gardens)
+    ├── Feature 8 (Photo Journaling)
+    └── Feature 11 (Community Profiles & Feed)
+```
+
+---
+
+## Feature 6: Harvest Tracking
+**No dependencies — can be built now.**
+**Inspired by: MyFolia, GrowVeg, SmartGardener, Growstuff.**
+
+Close the loop on the growing cycle by letting users record what they actually got out of the ground.
+
+### How it works
+1. From any planting record, tap "Log Harvest" and enter date, quantity, and unit (lbs, oz, count, bunches, etc.)
+2. The planting accumulates a running harvest total across the whole season
+3. The dashboard shows total harvests this season and a "money saved" estimate based on average grocery prices
+
+### Scope
+- [ ] Harvest log model: plantingId, date, quantity, unit, notes
+- [ ] "Log Harvest" button on planting cards and planting detail page
+- [ ] Running harvest total per planting (shown on planting card)
+- [ ] Season summary on dashboard: total harvests by crop, total weight
+- [ ] Optional: money-saved calculator — user enters market price per unit; app shows cumulative value of all harvests (inspired by SmartGardener)
+- [ ] Optional: average yield per bed/area over multiple seasons
+
+### Notes
+- Harvest data is already implicitly expected by users who log plantings — this is the natural completion of the planting lifecycle
+- Harvest history becomes more valuable over seasons as a record of what actually performed well
+
+---
+
+## Feature 7: Crop Rotation Tracking
+**No dependencies — can be built using existing planting data.**
+**Inspired by: GrowVeg (5-year rotation), VegPlotter.**
+
+Prevent soil depletion and disease buildup by automatically tracking which plant families have been in each bed and warning when a crop is placed back too soon.
+
+### How it works
+1. Each planting is tagged with its plant family (nightshades, brassicas, legumes, roots, alliums, cucurbits, etc.)
+2. When logging a new planting in a named bed or area, the app checks previous years and warns if the same family was there recently
+3. A rotation history view shows a grid of bed × year so you can see the full rotation at a glance
+
+### Scope
+- [ ] Plant family field added to each seed in the database (most already have category)
+- [ ] Bed/area field on planting records (currently optional notes field — promote to a proper field)
+- [ ] Rotation history view: bed rows × year columns, color-coded by plant family
+- [ ] Warning when adding a planting to a bed that had the same family within the last 2–3 years
+- [ ] Optional: suggested crop to follow based on prior family (e.g. legume after brassica to fix nitrogen)
+
+---
+
+## Feature 8: Photo Journaling
+**Requires: Feature 1 (for cloud image storage).**
+**Inspired by: MyFolia, Gardenize, Garden Tags, Growstuff.**
+
+Let users attach photos to journal entries, planting records, and harvest logs to build a visual record of each season.
+
+### How it works
+1. Any journal entry, planting, or harvest log can have one or more photos attached
+2. Each planting accumulates a photo timeline showing the plant's progression from seed to harvest
+3. A garden gallery view shows all photos in reverse-chronological order
+
+### Scope
+- [ ] Photo upload on journal entries (Firebase Storage or Supabase Storage)
+- [ ] Photo attachment on planting records and harvest logs
+- [ ] Per-planting photo timeline (chronological, labeled by milestone or date)
+- [ ] Garden gallery: all photos across all plantings in a masonry/grid view
+- [ ] Thumbnail generation and lazy loading for performance
+- [ ] Optional: weather conditions auto-recorded alongside each photo entry (inspired by MyFolia)
+
+---
+
+## Feature 9: Companion Planting Recommendations
+**No dependencies — enriches the existing seed database.**
+**Inspired by: GrowVeg (evidence-based only), Planter (real-time visual alerts), SmartGardener.**
+
+Show which plants help each other and which should be kept apart, based on scientific evidence rather than gardening folklore.
+
+### How it works
+1. Each seed in the database gains a list of beneficial companions and plants to avoid
+2. When a user views a seed or a planting, companions are shown with a brief rationale
+3. In future (with Feature 8's layout tool), companions could be highlighted visually when placing plants near each other
+
+### Design principle — evidence-based only
+Follow GrowVeg's approach: only list companions supported by published research. Don't list "bad companions" unless the evidence is solid — much of the bad-companion folklore (e.g. onions stunting beans) has never been scientifically confirmed.
+
+### Scope
+- [ ] Companion data fields on seed records: `companions: string[]`, `avoid: string[]`, `companionNotes: string`
+- [ ] Companion planting section on seed detail pages
+- [ ] "Good neighbors" badge on the planting calendar when a companion is already planted nearby (same bed)
+- [ ] Optional: filter seed database by "companions well with [X]"
+
+---
+
+## Feature 10: Serendipity Seed Labels
+**Requires: Feature 2 (Seed Swap / Stash).**
+**Directly inspired by MyFolia — no other app has replicated this.**
+
+A printable label system for leaving seed packets in random public places (libraries, cafés, community boards) for strangers to find and grow — inspired by BookCrossing.
+
+### How it works
+1. From the Seed Stash (Feature 2), mark a packet as a "Serendipity Pack" — seeds you intend to leave somewhere for a stranger
+2. The app generates a printable label with the plant name, brief growing notes, your username, and a unique tracking code
+3. When someone finds a packet and has the app, they can enter the code to "claim" the seeds, log where they found it, and optionally notify the original owner
+4. A public map shows where packets have been left and claimed — watching your seeds travel is the reward
+
+### Scope
+- [ ] "Leave as Serendipity" option on stash items
+- [ ] Printable label generator (plant name, growing notes, unique code, QR code linking to claim page)
+- [ ] Public claim page (no account required to claim)
+- [ ] Claim notification to original owner
+- [ ] Global map showing where each packet was left and claimed
+- [ ] Optional: chain tracking if a claimant re-leaves the seeds again elsewhere
+
+### Notes
+- This is a viral/word-of-mouth growth feature — every label left in public is a physical advertisement for the app
+- Could be a paid-tier feature or a free feature with paid cosmetic label designs
+
+---
+
+## Feature 11: Community Profiles & Activity Feed
+**Requires: Feature 1.**
+**Inspired by: MyFolia (news feed, friend gardens, community groups), Garden Tags, Growstuff.**
+
+Turn GardenScheduler from a solo planning tool into a social gardening network — users can follow each other, see what neighbors are planting, and get inspired by local gardeners in their climate zone.
+
+### How it works
+1. Each user gets an optional public profile showing their garden name, zone, current plantings, and harvest highlights
+2. A "Community" feed shows recent activity from users you follow: new plantings sowed, harvests logged, journal entries posted
+3. Zone-filtered discovery: browse what gardeners in the same USDA zone are growing right now
+
+### Scope
+- [ ] Public profile toggle (opt-in — private by default)
+- [ ] Follow / unfollow other users
+- [ ] Activity feed: follows' recent plantings, harvests, and journal posts
+- [ ] Zone discovery page: most popular crops being planted in your zone this month
+- [ ] Community groups / special interest clubs (e.g. "Heirloom Tomatoes", "Seed Savers", "Zone 6 Growers")
+- [ ] Optional: "What's being sown near me" filtered by geographic region
+
+### Notes
+- MyFolia built one of the most beloved gardening communities online before shutting down in 2019; GardenScheduler could fill that gap
+- Community data (most popular crops by zone and month) becomes a product in itself — it makes the planting calendar smarter over time
+
+---
+
+## Updated dependency map
+
+```
+Feature 1 (Accounts & Hosting)
+    ├── Feature 2 (Seed Swap)
+    │       └── Feature 10 (Serendipity Labels)
+    ├── Feature 3 (Plant Share)
+    ├── Feature 4 (Payments)  ← also depends on 2 & 3 being worth paying for
+    ├── Feature 5 (Multiple Gardens)
+    ├── Feature 8 (Photo Journaling)
+    └── Feature 11 (Community Profiles & Feed)
+
+Standalone (no accounts needed):
+    ├── Feature 6 (Harvest Tracking)
+    ├── Feature 7 (Crop Rotation Tracking)
+    └── Feature 9 (Companion Planting)
 ```
