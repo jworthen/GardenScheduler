@@ -71,10 +71,16 @@ export default function SeedCellPlanner() {
     seenSeedIds.add(seed.id);
   });
 
+  const inventorySeedIds = new Set(inventorySeeds.map((i) => i.seedId));
+
   const filteredAllSeeds = seedSearch.trim()
-    ? allSeeds.filter((s) =>
-        s.commonName.toLowerCase().includes(seedSearch.toLowerCase())
-      )
+    ? allSeeds
+        .filter((s) => s.commonName.toLowerCase().includes(seedSearch.toLowerCase()))
+        .sort((a, b) => {
+          const aIn = inventorySeedIds.has(a.id) ? 0 : 1;
+          const bIn = inventorySeedIds.has(b.id) ? 0 : 1;
+          return aIn - bIn;
+        })
     : allSeeds;
 
   const handleCreatePlan = () => {
@@ -436,7 +442,7 @@ export default function SeedCellPlanner() {
                 <p className="px-3 py-2 text-xs text-gray-400">No matches</p>
               ) : (
                 filteredAllSeeds.map((seed) => {
-                  const inInventory = inventorySeeds.some((i) => i.seedId === seed.id);
+                  const inInventory = inventorySeedIds.has(seed.id);
                   return (
                     <button
                       key={seed.id}
