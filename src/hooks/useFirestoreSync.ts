@@ -51,8 +51,6 @@ export function useFirestoreSync() {
       });
   }, [user]);
 
-  return { firestoreReady };
-
   // Write to Firestore whenever store state changes (debounced)
   useEffect(() => {
     if (!user) return;
@@ -71,4 +69,5 @@ export function useFirestoreSync() {
     return () => unsubscribe();
   }, [user]);
 
+  return { firestoreReady };
 }

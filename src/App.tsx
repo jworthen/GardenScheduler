@@ -12,6 +12,7 @@ import TaskList from './pages/Tasks/TaskList';
 import SeedInventory from './pages/Inventory/SeedInventory';
 import GardenJournal from './pages/Journal/GardenJournal';
 import Settings from './pages/Settings/Settings';
+import Profile from './pages/Profile/Profile';
 import WhatCanIPlant from './pages/Tools/WhatCanIPlant';
 
 function AppRoutes() {
@@ -39,6 +40,7 @@ function AppRoutes() {
         <Route path="/journal" element={<GardenJournal />} />
         <Route path="/tools" element={<WhatCanIPlant />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

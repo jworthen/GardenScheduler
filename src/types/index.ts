@@ -167,6 +167,10 @@ export interface UserSettings {
     showCompletedTasks: boolean;
     colorByCategory: boolean;
   };
+  profile: {
+    gardenName: string;
+    units: 'imperial' | 'metric';
+  };
   onboardingCompleted: boolean;
 }
 

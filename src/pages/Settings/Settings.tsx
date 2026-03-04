@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, MapPin, Bell, Palette, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Settings as SettingsIcon, MapPin, Bell, Palette, Download, Trash2, AlertTriangle, User, ChevronRight } from 'lucide-react';
 import { useGardenStore } from '../../store/useStore';
+import { useAuth } from '../../contexts/AuthContext';
 import { lookupFrostDatesByZip, zoneData } from '../../data/frostDates';
 import PageHeader from '../../components/common/PageHeader';
 
 export default function Settings() {
+  const { user } = useAuth();
   const { settings, updateSettings, setLocation } = useGardenStore();
   const [saved, setSaved] = useState(false);
   const [zipInput, setZipInput] = useState(settings.location.zipCode || '');
@@ -69,6 +72,22 @@ export default function Settings() {
             ✓ Settings saved!
           </div>
         )}
+
+        {/* Account */}
+        <Link to="/profile" className="card p-4 flex items-center gap-3 hover:bg-stone-50 transition-colors">
+          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-garden-100 text-garden-600 flex-shrink-0">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="" className="w-9 h-9 rounded-full" />
+            ) : (
+              <User size={18} />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900">{user?.displayName ?? 'User'}</p>
+            <p className="text-xs text-gray-500">{settings.profile?.gardenName || 'No garden name set'}</p>
+          </div>
+          <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+        </Link>
 
         {/* Location */}
         <section className="card p-5">

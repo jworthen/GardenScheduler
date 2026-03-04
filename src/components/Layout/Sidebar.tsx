@@ -10,6 +10,7 @@ import {
   Settings,
   Leaf,
   LogOut,
+  User,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
@@ -76,29 +77,34 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Settings at bottom */}
-      <div className="px-3 pb-2 border-t border-stone-100 pt-3">
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            clsx(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
-              isActive
-                ? 'bg-garden-50 text-garden-700'
-                : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900'
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <Settings
-                className={clsx('flex-shrink-0', isActive ? 'text-garden-600' : 'text-gray-400')}
-                size={18}
-              />
-              Settings
-            </>
-          )}
-        </NavLink>
+      {/* Settings + Profile at bottom */}
+      <div className="px-3 pb-2 border-t border-stone-100 pt-3 space-y-1">
+        {[{ to: '/profile', icon: User, label: 'Profile' }, { to: '/settings', icon: Settings, label: 'Settings' }].map(
+          ({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
+                  isActive
+                    ? 'bg-garden-50 text-garden-700'
+                    : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900'
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    className={clsx('flex-shrink-0', isActive ? 'text-garden-600' : 'text-gray-400')}
+                    size={18}
+                  />
+                  {label}
+                </>
+              )}
+            </NavLink>
+          )
+        )}
       </div>
 
       {/* User profile */}

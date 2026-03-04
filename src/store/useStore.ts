@@ -34,6 +34,10 @@ const DEFAULT_SETTINGS: UserSettings = {
     showCompletedTasks: false,
     colorByCategory: true,
   },
+  profile: {
+    gardenName: '',
+    units: 'imperial',
+  },
   onboardingCompleted: false,
 };
 
@@ -129,6 +133,7 @@ export const useGardenStore = create<GardenStore>()(
             ...updates,
             location: { ...state.settings.location, ...(updates.location || {}) },
             preferences: { ...state.settings.preferences, ...(updates.preferences || {}) },
+            profile: { ...state.settings.profile, ...(updates.profile || {}) },
           },
         })),
 
