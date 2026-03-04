@@ -15,6 +15,11 @@ function debounce(fn: (...args: any[]) => void, delay: number) {
   };
 }
 
+// Per-user key so switching accounts doesn't mix timestamps
+function localWriteKey(uid: string) {
+  return `garden-local-write-time:${uid}`;
+}
+
 export function useFirestoreSync() {
   const { user } = useAuth();
   const hydrate = useGardenStore((s) => s.hydrate);
@@ -41,7 +46,18 @@ export function useFirestoreSync() {
     Promise.all([
       getDoc(docRef).then((snap) => {
         if (snap.exists()) {
-          hydrate(snap.data() as Parameters<typeof hydrate>[0]);
+          const data = snap.data();
+          // Only overwrite local state if Firestore data is at least as recent.
+          // This prevents a stale Firestore snapshot from clobbering local changes
+          // that haven't been flushed yet (e.g. user added items then refreshed
+          // before the debounced write completed).
+          const firestoreSavedAt: string = data.savedAt ?? '';
+          const localWriteTime: string = localStorage.getItem(localWriteKey(user.uid)) ?? '';
+          if (!localWriteTime || firestoreSavedAt >= localWriteTime) {
+            hydrate(data as Parameters<typeof hydrate>[0]);
+          }
+          // If localWriteTime > firestoreSavedAt, the local (persisted) state is
+          // newer — leave it in place and let the next debounced write catch up.
         }
       }),
       getCommunitySeeds().then(setCommunitySeeds),
@@ -59,37 +75,24 @@ export function useFirestoreSync() {
   useEffect(() => {
     if (!user) return;
 
-    const pendingRef = { state: null as GardenStoreData | null };
-
     function writeNow(state: GardenStoreData) {
       if (!loadedRef.current) return;
       const { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans } = state;
+      const savedAt = new Date().toISOString();
       const docRef = doc(db, 'users', user!.uid, 'data', 'gardenData');
-      setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans });
+      setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, savedAt });
     }
 
-    const syncToFirestore = debounce((state: GardenStoreData) => {
-      pendingRef.state = null;
-      writeNow(state);
-    }, 1500);
+    const syncToFirestore = debounce(writeNow, 1500);
 
     const unsubscribe = useGardenStore.subscribe((state) => {
-      pendingRef.state = state;
+      // Record the local mutation time immediately (synchronously, before any
+      // async Firestore write) so the load-time comparison is always accurate.
+      localStorage.setItem(localWriteKey(user!.uid), new Date().toISOString());
       syncToFirestore(state);
     });
 
-    // Flush any pending write synchronously before the page unloads
-    function handleBeforeUnload() {
-      if (pendingRef.state) {
-        writeNow(pendingRef.state);
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      unsubscribe();
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    return () => unsubscribe();
   }, [user]);
 
   return { firestoreReady };
