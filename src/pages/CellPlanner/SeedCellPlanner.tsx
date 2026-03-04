@@ -75,6 +75,7 @@ export default function SeedCellPlanner() {
       category: seed?.category ?? 'vegetable',
     });
   });
+  inventorySeeds.sort((a, b) => a.varietyName.localeCompare(b.varietyName));
 
   const inventorySeedIds = new Set(inventorySeeds.map((i) => i.seedId));
 
