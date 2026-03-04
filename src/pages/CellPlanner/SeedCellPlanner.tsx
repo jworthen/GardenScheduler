@@ -382,132 +382,122 @@ export default function SeedCellPlanner() {
 
         {/* ── Right panel: seed stash ── */}
         <aside className="w-52 flex-shrink-0 border-l border-stone-200 bg-white flex flex-col overflow-hidden print:hidden">
-          <div className="px-3 py-3 border-b border-stone-100 flex items-center justify-between">
+          <div className="px-3 py-3 border-b border-stone-100">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stash</span>
-            {(activeSeed || isErasing) && (
-              <button
-                onClick={() => { setActiveSeed(null); setIsErasing(false); }}
-                className="p-1 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
-                title="Deselect"
-              >
-                <X size={14} />
-              </button>
-            )}
           </div>
 
-          {/* Active tool indicator */}
-          {(activeSeed || isErasing) && (
-            <div
-              className="mx-3 my-2 px-2 py-1.5 rounded text-xs font-medium text-gray-800 flex items-center gap-1.5"
-              style={
-                activeSeed
-                  ? {
-                      backgroundColor: CATEGORY_BG[activeSeed.category],
-                      borderLeft: `3px solid ${CATEGORY_ACCENT[activeSeed.category]}`,
-                    }
-                  : { backgroundColor: '#f3f4f6', borderLeft: '3px solid #6b7280' }
-              }
-            >
-              {isErasing ? (
-                <>
-                  <Eraser size={11} />
-                  Erasing
-                </>
-              ) : (
-                <>✏️ {activeSeed!.varietyName}</>
-              )}
-            </div>
-          )}
-
-          {/* Eraser tool */}
-          <div className="px-3 pt-2 pb-1">
+          {/* Active tool pill */}
+          <div className="px-3 pt-3 flex-shrink-0 space-y-2">
             <button
               onClick={toggleEraser}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-xs transition-colors ${
                 isErasing
-                  ? 'bg-gray-100 text-gray-700 font-medium'
+                  ? 'bg-gray-100 text-gray-700 font-medium ring-1 ring-gray-300'
                   : 'text-gray-500 hover:bg-stone-50'
               }`}
             >
               <Eraser size={13} />
               Eraser
             </button>
+
+            {activeSeed && (
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium text-gray-800"
+                style={{
+                  backgroundColor: CATEGORY_BG[activeSeed.category],
+                  borderLeft: `3px solid ${CATEGORY_ACCENT[activeSeed.category]}`,
+                }}
+              >
+                <span className="flex-1 truncate">✏️ {activeSeed.varietyName}</span>
+                <button
+                  onClick={() => setActiveSeed(null)}
+                  className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Inventory seeds */}
-          {inventorySeeds.length > 0 && (
-            <>
-              <div className="px-3 pt-2 pb-1">
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                  My Inventory
-                </span>
-              </div>
-              <div className="overflow-y-auto">
-                {inventorySeeds.map((opt) => (
-                  <button
-                    key={opt.seedId}
-                    onClick={() => selectSeed(opt)}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 ${
-                      activeSeed?.seedId === opt.seedId
-                        ? 'bg-garden-50 text-garden-700'
-                        : 'text-gray-600 hover:bg-stone-50'
-                    }`}
-                  >
-                    <span
-                      className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: CATEGORY_ACCENT[opt.category] }}
-                    />
-                    {opt.varietyName}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          {/* Search — always visible */}
+          <div className="px-3 pt-3 pb-2 flex-shrink-0">
+            <input
+              className="w-full text-xs border border-stone-200 rounded px-2 py-1.5 focus:outline-none focus:border-garden-400"
+              placeholder="Search seeds…"
+              value={seedSearch}
+              onChange={(e) => setSeedSearch(e.target.value)}
+            />
+          </div>
 
-          {/* All seeds from database */}
-          <div className="border-t border-stone-100 flex flex-col flex-1 overflow-hidden min-h-0">
-            <div className="px-3 pt-2 pb-1 flex-shrink-0">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                All Seeds
-              </span>
-            </div>
-            <div className="px-3 pb-2 flex-shrink-0">
-              <input
-                className="w-full text-xs border border-stone-200 rounded px-2 py-1 focus:outline-none focus:border-garden-400"
-                placeholder="Search…"
-                value={seedSearch}
-                onChange={(e) => setSeedSearch(e.target.value)}
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto pb-2">
-              {filteredAllSeeds.length === 0 ? (
-                <p className="px-3 text-xs text-gray-400">No matches</p>
+          <div className="flex-1 overflow-y-auto pb-2">
+            {seedSearch.trim() ? (
+              /* ── Search results ── */
+              filteredAllSeeds.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-gray-400">No matches</p>
               ) : (
-                filteredAllSeeds.map((seed) => (
-                  <button
-                    key={seed.id}
-                    onClick={() =>
-                      selectSeed({
-                        seedId: seed.id,
-                        varietyName: seed.commonName,
-                        category: seed.category,
-                      })
-                    }
-                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
-                      activeSeed?.seedId === seed.id
-                        ? 'bg-garden-50 text-garden-700'
-                        : 'text-gray-600 hover:bg-stone-50'
-                    }`}
-                  >
-                    <span
-                      className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: CATEGORY_ACCENT[seed.category] }}
-                    />
-                    {seed.commonName}
-                  </button>
-                ))
-              )}
-            </div>
+                filteredAllSeeds.map((seed) => {
+                  const inInventory = inventorySeeds.some((i) => i.seedId === seed.id);
+                  return (
+                    <button
+                      key={seed.id}
+                      onClick={() =>
+                        selectSeed({ seedId: seed.id, varietyName: seed.commonName, category: seed.category })
+                      }
+                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
+                        activeSeed?.seedId === seed.id
+                          ? 'bg-garden-50 text-garden-700'
+                          : 'text-gray-600 hover:bg-stone-50'
+                      }`}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: CATEGORY_ACCENT[seed.category] }}
+                      />
+                      <span className="flex-1 truncate">{seed.commonName}</span>
+                      {inInventory && (
+                        <span className="text-[9px] text-garden-600 font-medium flex-shrink-0">in stash</span>
+                      )}
+                    </button>
+                  );
+                })
+              )
+            ) : (
+              /* ── Default: inventory only ── */
+              inventorySeeds.length === 0 ? (
+                <div className="px-3 py-4 text-center">
+                  <p className="text-xs text-gray-400">No seeds in inventory.</p>
+                  <p className="text-xs text-gray-400 mt-1">Search to pick from the full database.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="px-3 pt-1 pb-1">
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                      My Inventory
+                    </span>
+                  </div>
+                  {inventorySeeds.map((opt) => (
+                    <button
+                      key={opt.seedId}
+                      onClick={() => selectSeed(opt)}
+                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
+                        activeSeed?.seedId === opt.seedId
+                          ? 'bg-garden-50 text-garden-700'
+                          : 'text-gray-600 hover:bg-stone-50'
+                      }`}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: CATEGORY_ACCENT[opt.category] }}
+                      />
+                      <span className="truncate">{opt.varietyName}</span>
+                    </button>
+                  ))}
+                  <p className="px-3 pt-3 text-[10px] text-gray-400">
+                    Search above to pick from the full seed database.
+                  </p>
+                </>
+              )
+            )}
           </div>
         </aside>
       </div>

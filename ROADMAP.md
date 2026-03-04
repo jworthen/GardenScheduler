@@ -91,25 +91,27 @@ Generate print-ready tags for each plant in your garden. Each tag includes the v
 ---
 
 ## Feature 4: Seed Cell Planner
-**No dependencies — standalone feature.**
+`[x]` **Complete.**
 
-Give users a visual, printable map of a seed tray or cell flat. The user defines the grid dimensions, drags seeds from their stash onto individual cells, and saves or prints the layout so they always know what's in which cell.
+### As built
+Three-panel layout: plans list (left) | grid (center) | seed stash (right).
 
-### How it works
-1. User creates a new cell plan and enters the grid size (e.g. 6 columns × 30 rows)
-2. The app renders a grid of labeled cells
-3. Seeds from the user's stash appear in a sidebar — user drags and drops a seed variety onto one or more cells
-4. The saved plan is stored against the user's account (or locally for non-authenticated users) so they can reference it digitally
-5. A print view renders a clean, high-contrast grid suitable for printing and sticking to the shelf or tray
+- Grid configuration via a "New Plan" dialog — name, cols × rows, with one-click presets for 50/72/128/288-cell flats
+- Click or drag to paint cells; right-click or Eraser tool to clear; Eraser supports drag-erase
+- Color coding by plant category — distinct background + left-border accent per category
+- Cell numbers in empty cells for orientation
+- Legend below grid showing each variety and cell count
+- Stash panel: Eraser, inventory seeds, plus a search-first all-seeds picker
+- Plans saved per user in Firestore, synced alongside all other garden data
+- Print view: sidebars hidden, grid + legend rendered clean; auto-landscape when cols > rows
 
 ### Scope
-- [ ] Grid configuration: columns × rows, optional cell size label (e.g. "72-cell flat")
-- [ ] Drag-and-drop seed assignment from stash sidebar onto individual cells
-- [ ] Multi-select: drag to paint a range of cells with the same variety
-- [ ] Cell labels: auto-filled with variety name; optionally show sow date
-- [ ] Save/load named plans (e.g. "Spring 2026 — Greenhouse Flat 1")
-- [ ] Print view: clean grid, variety name in each cell, legend at the bottom, date printed in header
-- [ ] Color coding: each variety gets a distinct color for quick visual scanning
+- [x] Grid configuration: columns × rows, optional flat size presets
+- [x] Click-and-drag cell painting with per-seed color coding
+- [x] Cell labels: variety name in each filled cell; cell number in empty cells
+- [x] Save/load named plans ("Spring 2026 — Greenhouse Flat 1")
+- [x] Print view: clean grid, legend at bottom, date in header, auto-landscape for wide trays
+- [x] Color coding: each category gets a distinct background + accent color
 
 ---
 
