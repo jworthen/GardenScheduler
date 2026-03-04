@@ -80,6 +80,7 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
   const set = (key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+    if (submitError) setSubmitError(null);
   };
 
   const applyLookupResult = (result: Awaited<ReturnType<typeof lookupPlantByName>>) => {
@@ -126,7 +127,12 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
 
   const handleSubmit = async () => {
     const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      setSubmitError('Fill in the required fields highlighted above before approving.');
+      return;
+    }
+    setSubmitError(null);
 
     const seed: Seed = {
       id: generateId(),
