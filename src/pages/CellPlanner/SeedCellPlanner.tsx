@@ -60,15 +60,20 @@ export default function SeedCellPlanner() {
   const activePlan = cellPlans.find((p) => p.id === activePlanId) ?? null;
   const allSeeds = getAllSeeds();
 
-  // Inventory seeds that are not empty and have a linked seed record
+  // All non-empty inventory items, deduplicated by seedId (or varietyName for unlinked items)
   const inventorySeeds: SeedOption[] = [];
-  const seenSeedIds = new Set<string>();
+  const seenKeys = new Set<string>();
   inventory.forEach((item) => {
-    if (item.status === 'empty' || !item.seedId || seenSeedIds.has(item.seedId)) return;
-    const seed = allSeeds.find((s) => s.id === item.seedId);
-    if (!seed) return;
-    inventorySeeds.push({ seedId: seed.id, varietyName: seed.commonName, category: seed.category });
-    seenSeedIds.add(seed.id);
+    if (item.status === 'empty') return;
+    const seed = item.seedId ? allSeeds.find((s) => s.id === item.seedId) : undefined;
+    const key = seed ? `seed:${seed.id}` : `name:${item.varietyName.toLowerCase()}`;
+    if (seenKeys.has(key)) return;
+    seenKeys.add(key);
+    inventorySeeds.push({
+      seedId: seed?.id ?? `inv:${item.id}`,
+      varietyName: seed?.commonName ?? item.varietyName,
+      category: seed?.category ?? 'vegetable',
+    });
   });
 
   const inventorySeedIds = new Set(inventorySeeds.map((i) => i.seedId));
