@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Check, X, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, X, Clock, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { SeedRequest, PlantCategory, PlantType, LightRequirement, FrostTolerance, WaterNeeds, Seed } from '../../types';
-import { getAllRequests, approveRequest, rejectRequest, getCommunitySeeds } from '../../lib/seedRequests';
+import { getAllRequests, approveRequest, rejectRequest, getCommunitySeeds, lookupPlantByName } from '../../lib/seedRequests';
 import { useGardenStore } from '../../store/useStore';
 import Modal from '../../components/common/Modal';
 import PageHeader from '../../components/common/PageHeader';
@@ -71,10 +71,33 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
   const [form, setForm] = useState(defaultSeedForm(request));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not-found'>('idle');
 
   const set = (key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: '' }));
+  };
+
+  const handleLookup = async () => {
+    setLookingUp(true);
+    setLookupStatus('idle');
+    try {
+      const result = await lookupPlantByName(form.commonName);
+      if (!result) { setLookupStatus('not-found'); return; }
+      setForm((prev) => ({
+        ...prev,
+        ...(result.botanicalName && { botanicalName: result.botanicalName }),
+        ...(result.growingNotes && { growingNotes: result.growingNotes }),
+        lightRequirement: result.lightRequirement,
+        startIndoors: result.startIndoors,
+        directSow: result.directSow,
+        ...(result.spacing !== null && { spacing: result.spacing }),
+      }));
+      setLookupStatus('found');
+    } finally {
+      setLookingUp(false);
+    }
   };
 
   const validate = () => {
@@ -145,6 +168,24 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
             <span className="font-medium">Requester notes:</span> {request.notes}
           </div>
         )}
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleLookup}
+            disabled={lookingUp || submitting}
+            className="btn-secondary text-sm flex items-center gap-1.5"
+          >
+            <Search size={14} />
+            {lookingUp ? 'Looking up…' : 'Auto-fill from OpenFarm'}
+          </button>
+          {lookupStatus === 'found' && (
+            <span className="text-xs text-green-600">Data found and filled in — review before saving.</span>
+          )}
+          {lookupStatus === 'not-found' && (
+            <span className="text-xs text-amber-600">No match found on OpenFarm. Fill in manually.</span>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
