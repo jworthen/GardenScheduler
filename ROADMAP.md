@@ -1,4 +1,4 @@
-# GardenScheduler — Feature Roadmap
+# Last Frost — Feature Roadmap
 
 ---
 
@@ -231,7 +231,7 @@ A printable label system for leaving seed packets in random public places (libra
 **Requires: Feature 1.**
 **Inspired by: MyFolia (news feed, friend gardens, community groups), Garden Tags, Growstuff.**
 
-Turn GardenScheduler from a solo planning tool into a social gardening network — users can follow each other, see what neighbors are planting, and get inspired by local gardeners in their climate zone.
+Turn Last Frost from a solo planning tool into a social gardening network — users can follow each other, see what neighbors are planting, and get inspired by local gardeners in their climate zone.
 
 ### How it works
 1. Each user gets an optional public profile showing their garden name, zone, current plantings, and harvest highlights
@@ -247,7 +247,7 @@ Turn GardenScheduler from a solo planning tool into a social gardening network �
 - [ ] Optional: "What's being sown near me" filtered by geographic region
 
 ### Notes
-- MyFolia built one of the most beloved gardening communities online before shutting down in 2019; GardenScheduler could fill that gap
+- MyFolia built one of the most beloved gardening communities online before shutting down in 2019; Last Frost could fill that gap
 - Community data (most popular crops by zone and month) becomes a product in itself — it makes the planting calendar smarter over time
 
 ---

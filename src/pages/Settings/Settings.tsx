@@ -57,7 +57,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `garden-scheduler-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `last-frost-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -261,7 +261,7 @@ export default function Settings() {
 
         {/* About */}
         <section className="card p-5">
-          <h2 className="font-bold text-gray-900 mb-2">About GardenScheduler</h2>
+          <h2 className="font-bold text-gray-900 mb-2">About Last Frost</h2>
           <p className="text-sm text-gray-500">
             A comprehensive seed starting and garden planning application with 160+ plant varieties, smart planting calendars, task management, seed inventory tracking, and garden journaling.
           </p>

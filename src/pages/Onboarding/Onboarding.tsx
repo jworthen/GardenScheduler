@@ -178,7 +178,7 @@ export default function Onboarding() {
             <div className="w-20 h-20 bg-garden-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Leaf className="w-10 h-10 text-garden-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">Welcome to GardenScheduler</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">Welcome to Last Frost</h1>
             <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">
               Plan your perfect garden with personalized planting calendars, seed tracking, and task lists.
             </p>

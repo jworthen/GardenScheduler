@@ -1,4 +1,4 @@
-# GardenScheduler
+# Last Frost
 
 A seed starting and garden planning app. Track your seed stash, get personalized sow/transplant dates based on your last frost, and plan what you're growing each season.
 

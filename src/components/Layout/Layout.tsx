@@ -30,7 +30,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="flex items-center justify-center w-7 h-7 bg-garden-600 rounded-lg">
               <Leaf className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-bold text-gray-900">GardenScheduler</span>
+            <span className="text-sm font-bold text-gray-900">Last Frost</span>
           </div>
           <div className="flex items-center gap-2">
             {user?.photoURL ? (
