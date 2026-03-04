@@ -71,6 +71,7 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
   const [form, setForm] = useState(defaultSeedForm(request));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not-found'>('idle');
   const [lookupQuery, setLookupQuery] = useState(request.commonName);
@@ -154,10 +155,13 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
       icon: form.icon,
     };
 
+    setSubmitError(null);
     setSubmitting(true);
     try {
       await onApprove(seed, form.reviewNotes);
       onClose();
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Failed to approve — check Firestore permissions and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -170,12 +174,19 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
       title={`Approve: ${request.commonName}`}
       size="lg"
       footer={
-        <>
-          <button onClick={onClose} className="btn-secondary" disabled={submitting}>Cancel</button>
-          <button onClick={handleSubmit} className="btn-primary" disabled={submitting}>
-            {submitting ? 'Saving…' : 'Approve & Add to Database'}
-          </button>
-        </>
+        <div className="flex flex-col gap-2 w-full">
+          {submitError && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {submitError}
+            </p>
+          )}
+          <div className="flex gap-2 justify-end">
+            <button onClick={onClose} className="btn-secondary" disabled={submitting}>Cancel</button>
+            <button onClick={handleSubmit} className="btn-primary" disabled={submitting || lookingUp}>
+              {submitting ? 'Saving…' : 'Approve & Add to Database'}
+            </button>
+          </div>
+        </div>
       }
     >
       <div className="space-y-4">
