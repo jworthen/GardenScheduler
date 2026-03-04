@@ -123,9 +123,19 @@ function mapSowingMethod(method: string): { startIndoors: boolean; directSow: bo
 }
 
 async function fetchOpenFarm(query: string): Promise<OpenFarmLookupResult | null> {
-  const res = await fetch(
-    `https://openfarm.cc/api/v1/crops?filter=${encodeURIComponent(query)}&page[size]=1`,
-  );
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  let res: Response;
+  try {
+    res = await fetch(
+      `https://openfarm.cc/api/v1/crops?filter=${encodeURIComponent(query)}&page[size]=1`,
+      { signal: controller.signal },
+    );
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!res.ok) return null;
   const json = await res.json();
   const attrs = json?.data?.[0]?.attributes;

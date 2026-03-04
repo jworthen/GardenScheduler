@@ -182,7 +182,7 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
           )}
           <div className="flex gap-2 justify-end">
             <button onClick={onClose} className="btn-secondary" disabled={submitting}>Cancel</button>
-            <button onClick={handleSubmit} className="btn-primary" disabled={submitting || lookingUp}>
+            <button onClick={handleSubmit} className="btn-primary" disabled={submitting}>
               {submitting ? 'Saving…' : 'Approve & Add to Database'}
             </button>
           </div>
