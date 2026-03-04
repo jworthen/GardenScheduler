@@ -20,7 +20,7 @@ const navItems = [
   { to: '/seeds', icon: Sprout, label: 'Seed Database' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
-  { to: '/inventory', icon: Package, label: 'Inventory' },
+  { to: '/inventory', icon: Package, label: 'Seed Inventory' },
   { to: '/journal', icon: BookOpen, label: 'Journal' },
   { to: '/tools', icon: Wrench, label: 'Tools' },
 ];
