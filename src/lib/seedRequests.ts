@@ -39,6 +39,7 @@ export async function submitSeedRequest(
   category: PlantCategory,
   commonName: string,
   notes: string,
+  sourceUrl?: string,
 ): Promise<string> {
   const allowed = await checkDailyRateLimit(userId);
   if (!allowed) {
@@ -50,6 +51,7 @@ export async function submitSeedRequest(
     category,
     commonName: commonName.trim(),
     notes: notes.trim(),
+    ...(sourceUrl?.trim() && { sourceUrl: sourceUrl.trim() }),
     status: 'pending',
     createdAt: Date.now(),
   });

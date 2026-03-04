@@ -28,6 +28,7 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
   const [category, setCategory] = useState<PlantCategory>('vegetable');
   const [commonName, setCommonName] = useState('');
   const [notes, setNotes] = useState('');
+  const [sourceUrl, setSourceUrl] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,9 +57,11 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
         category,
         commonName.trim(),
         notes.trim(),
+        sourceUrl.trim() || undefined,
       );
       setCommonName('');
       setNotes('');
+      setSourceUrl('');
       setCategory('vegetable');
       onSuccess();
       onClose();
@@ -132,8 +135,22 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any helpful details: supplier, why you love it, etc."
+            placeholder="Any helpful details: why you love it, where you've grown it, etc."
           />
+        </div>
+
+        <div>
+          <label className="label">Source URL (optional)</label>
+          <input
+            type="url"
+            className="input"
+            value={sourceUrl}
+            onChange={(e) => setSourceUrl(e.target.value)}
+            placeholder="https://www.rareseeds.com/…"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Link to the seed company page — helps us fill in accurate data when reviewing.
+          </p>
         </div>
 
         {error && (

@@ -164,9 +164,24 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
       }
     >
       <div className="space-y-4">
-        {request.notes && (
-          <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-gray-600">
-            <span className="font-medium">Requester notes:</span> {request.notes}
+        {(request.notes || request.sourceUrl) && (
+          <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-gray-600 space-y-1">
+            {request.notes && (
+              <p><span className="font-medium">Notes:</span> {request.notes}</p>
+            )}
+            {request.sourceUrl && (
+              <p>
+                <span className="font-medium">Source: </span>
+                <a
+                  href={request.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-700 hover:underline break-all"
+                >
+                  {request.sourceUrl}
+                </a>
+              </p>
+            )}
           </div>
         )}
 
@@ -542,6 +557,19 @@ export default function AdminSeedRequests() {
                       <p><span className="font-medium">Notes:</span> {req.notes}</p>
                     ) : (
                       <p className="text-gray-400 italic">No additional notes.</p>
+                    )}
+                    {req.sourceUrl && (
+                      <p>
+                        <span className="font-medium">Source: </span>
+                        <a
+                          href={req.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-700 hover:underline break-all"
+                        >
+                          {req.sourceUrl}
+                        </a>
+                      </p>
                     )}
                     {req.reviewNotes && (
                       <p><span className="font-medium">Review notes:</span> {req.reviewNotes}</p>

@@ -199,6 +199,7 @@ export interface SeedRequest {
   category: PlantCategory;
   commonName: string;
   notes: string;
+  sourceUrl?: string;
   status: SeedRequestStatus;
   createdAt: number;
   reviewNotes?: string;
