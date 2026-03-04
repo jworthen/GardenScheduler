@@ -175,6 +175,7 @@ export default function SeedCellPlanner() {
         @media print {
           body { margin: 0; }
           .cell-grid-wrapper { page-break-inside: avoid; }
+          ${activePlan && activePlan.cols > activePlan.rows ? '@page { size: landscape; }' : ''}
         }
       `}</style>
 
