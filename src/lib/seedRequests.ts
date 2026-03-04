@@ -118,27 +118,50 @@ function mapSowingMethod(method: string): { startIndoors: boolean; directSow: bo
   return { startIndoors: true, directSow: false };
 }
 
-export async function lookupPlantByName(commonName: string): Promise<OpenFarmLookupResult | null> {
+async function fetchOpenFarm(query: string): Promise<OpenFarmLookupResult | null> {
+  const res = await fetch(
+    `https://openfarm.cc/api/v1/crops?filter=${encodeURIComponent(query)}&page[size]=1`,
+  );
+  if (!res.ok) return null;
+  const json = await res.json();
+  const attrs = json?.data?.[0]?.attributes;
+  if (!attrs) return null;
+
+  // OpenFarm spread/row_spacing is in cm → convert to inches
+  const spacingCm: number | null = attrs.spread ?? attrs.row_spacing ?? null;
+  const spacingIn = spacingCm ? Math.round(spacingCm / 2.54) : null;
+
+  return {
+    botanicalName: attrs.binomial_name ?? '',
+    growingNotes: attrs.description ?? '',
+    lightRequirement: mapSunRequirement(attrs.sun_requirements ?? ''),
+    ...mapSowingMethod(attrs.sowing_method ?? ''),
+    spacing: spacingIn,
+  };
+}
+
+/**
+ * Looks up a plant on OpenFarm. If the exact query returns nothing, retries
+ * with the last word then the first word (handles cases like "Basil Lettuce Leaf"
+ * where the genus comes last, or where the variety prefix confuses the search).
+ */
+export async function lookupPlantByName(query: string): Promise<OpenFarmLookupResult | null> {
   try {
-    const res = await fetch(
-      `https://openfarm.cc/api/v1/crops?filter=${encodeURIComponent(commonName)}&page[size]=1`,
-    );
-    if (!res.ok) return null;
-    const json = await res.json();
-    const attrs = json?.data?.[0]?.attributes;
-    if (!attrs) return null;
+    const result = await fetchOpenFarm(query);
+    if (result) return result;
 
-    // OpenFarm spread/row_spacing is in cm → convert to inches
-    const spacingCm: number | null = attrs.spread ?? attrs.row_spacing ?? null;
-    const spacingIn = spacingCm ? Math.round(spacingCm / 2.54) : null;
+    const words = query.trim().split(/\s+/);
+    if (words.length > 1) {
+      // Try last word first (e.g. "Basil Lettuce Leaf" → "Basil" is last? No — try reversed order)
+      // Try last word (often the genus/common plant when variety adjectives come first)
+      const byLast = await fetchOpenFarm(words[words.length - 1]);
+      if (byLast) return byLast;
+      // Try first word
+      const byFirst = await fetchOpenFarm(words[0]);
+      if (byFirst) return byFirst;
+    }
 
-    return {
-      botanicalName: attrs.binomial_name ?? '',
-      growingNotes: attrs.description ?? '',
-      lightRequirement: mapSunRequirement(attrs.sun_requirements ?? ''),
-      ...mapSowingMethod(attrs.sowing_method ?? ''),
-      spacing: spacingIn,
-    };
+    return null;
   } catch {
     return null;
   }

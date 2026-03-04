@@ -73,6 +73,7 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'found' | 'not-found'>('idle');
+  const [lookupQuery, setLookupQuery] = useState(request.commonName);
 
   const set = (key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -83,7 +84,7 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
     setLookingUp(true);
     setLookupStatus('idle');
     try {
-      const result = await lookupPlantByName(form.commonName);
+      const result = await lookupPlantByName(lookupQuery);
       if (!result) { setLookupStatus('not-found'); return; }
       setForm((prev) => ({
         ...prev,
@@ -169,21 +170,30 @@ function ApproveModal({ request, onApprove, onClose }: ApproveModalProps) {
           </div>
         )}
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleLookup}
-            disabled={lookingUp || submitting}
-            className="btn-secondary text-sm flex items-center gap-1.5"
-          >
-            <Search size={14} />
-            {lookingUp ? 'Looking up…' : 'Auto-fill from OpenFarm'}
-          </button>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <input
+              className="input text-sm flex-1"
+              value={lookupQuery}
+              onChange={(e) => { setLookupQuery(e.target.value); setLookupStatus('idle'); }}
+              placeholder="Search OpenFarm…"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleLookup(); } }}
+            />
+            <button
+              type="button"
+              onClick={handleLookup}
+              disabled={lookingUp || submitting || !lookupQuery.trim()}
+              className="btn-secondary text-sm flex items-center gap-1.5 flex-shrink-0"
+            >
+              <Search size={14} />
+              {lookingUp ? 'Looking up…' : 'Auto-fill'}
+            </button>
+          </div>
           {lookupStatus === 'found' && (
-            <span className="text-xs text-green-600">Data found and filled in — review before saving.</span>
+            <p className="text-xs text-green-600">Data found and filled in — review before saving.</p>
           )}
           {lookupStatus === 'not-found' && (
-            <span className="text-xs text-amber-600">No match found on OpenFarm. Fill in manually.</span>
+            <p className="text-xs text-amber-600">No match found. Try a shorter search term (e.g. "basil").</p>
           )}
         </div>
 
