@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, AlertCircle, X } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Plus, Search, Edit2, Trash2, Package, X, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
 import { InventoryItem, Seed } from '../../types';
 import PageHeader from '../../components/common/PageHeader';
 import Modal from '../../components/common/Modal';
 import { format } from '../../utils/dateCalculations';
+import { getCategoryLabel } from '../../data/seeds';
 
 export default function SeedInventory() {
   const { inventory, addInventoryItem, updateInventoryItem, removeInventoryItem, getAllSeeds } = useGardenStore();
@@ -223,6 +224,162 @@ function InventoryCard({ item, onEdit, onRemove, onStatusChange }: InventoryCard
   );
 }
 
+// ---------------------------------------------------------------------------
+// Seed combobox — typeahead with category › subcategory › variety grouping
+// ---------------------------------------------------------------------------
+
+interface SeedComboboxProps {
+  seeds: Seed[];
+  value: string;
+  seedId: string;
+  onChange: (varietyName: string, seedId: string, openPollinated: boolean) => void;
+}
+
+function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const suggestions = useMemo(() => {
+    const q = value.trim().toLowerCase();
+    if (!q) return seeds;
+    return seeds.filter(
+      (s) =>
+        s.commonName.toLowerCase().includes(q) ||
+        s.subcategory?.toLowerCase().includes(q) ||
+        s.botanicalName.toLowerCase().includes(q),
+    );
+  }, [seeds, value]);
+
+  // Group suggestions: category → subcategory → seeds
+  const grouped = useMemo(() => {
+    const map = new Map<string, Map<string, Seed[]>>();
+    for (const seed of suggestions) {
+      const cat = getCategoryLabel(seed.category);
+      const sub = seed.subcategory ?? '';
+      if (!map.has(cat)) map.set(cat, new Map());
+      const subMap = map.get(cat)!;
+      if (!subMap.has(sub)) subMap.set(sub, []);
+      subMap.get(sub)!.push(seed);
+    }
+    return map;
+  }, [suggestions]);
+
+  const linked = seeds.find((s) => s.id === seedId);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className="label">Variety Name *</label>
+      <div className="relative">
+        <input
+          type="text"
+          className="input pr-8"
+          value={value}
+          placeholder="Search the database or type a variety name…"
+          onChange={(e) => { onChange(e.target.value, '', false); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
+          autoComplete="off"
+        />
+        {value && (
+          <button
+            type="button"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            onMouseDown={(e) => { e.preventDefault(); onChange('', '', false); setOpen(false); }}
+            tabIndex={-1}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* Linked seed breadcrumb */}
+      {linked && (
+        <div className="mt-1 flex items-center gap-1 text-xs text-garden-700">
+          <span>{linked.icon ?? '🌱'}</span>
+          <span className="font-medium">{getCategoryLabel(linked.category)}</span>
+          {linked.subcategory && (
+            <>
+              <ChevronRight size={10} className="text-gray-400" />
+              <span className="font-medium">{linked.subcategory}</span>
+            </>
+          )}
+          <ChevronRight size={10} className="text-gray-400" />
+          <span>{linked.commonName}</span>
+          <span className="text-gray-400 italic ml-0.5">— linked to database</span>
+        </div>
+      )}
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-xl shadow-lg max-h-72 overflow-y-auto">
+          {suggestions.length === 0 ? (
+            <p className="px-3 py-3 text-sm text-gray-400">
+              No matches — "{value}" will be saved as a custom variety.
+            </p>
+          ) : (
+            Array.from(grouped).map(([category, subMap]) =>
+              Array.from(subMap).map(([subcategory, groupSeeds]) => (
+                <div key={`${category}-${subcategory}`}>
+                  <div className="px-3 py-1.5 bg-stone-50 border-b border-stone-100 flex items-center gap-1 text-xs font-semibold text-gray-500 sticky top-0">
+                    <span>{category}</span>
+                    {subcategory && (
+                      <>
+                        <ChevronRight size={10} className="text-gray-400" />
+                        <span>{subcategory}</span>
+                      </>
+                    )}
+                  </div>
+                  {groupSeeds.map((seed) => (
+                    <button
+                      key={seed.id}
+                      type="button"
+                      className={clsx(
+                        'w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-garden-50 transition-colors',
+                        seedId === seed.id && 'bg-garden-50 text-garden-700',
+                      )}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        onChange(seed.commonName, seed.id, seed.openPollinated ?? false);
+                        setOpen(false);
+                      }}
+                    >
+                      <span>{seed.icon ?? '🌱'}</span>
+                      <span className="font-medium">{seed.commonName}</span>
+                      {seed.botanicalName && (
+                        <span className="text-gray-400 italic text-xs ml-auto truncate max-w-[40%]">
+                          {seed.botanicalName}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )),
+            )
+          )}
+          {value.trim() &&
+            !suggestions.some(
+              (s) => s.commonName.toLowerCase() === value.trim().toLowerCase(),
+            ) && (
+              <div className="px-3 py-2 text-xs text-gray-400 border-t border-stone-100">
+                Can't find it? Type a name and save — or add it to the seed database first.
+              </div>
+            )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface InventoryFormModalProps {
   isOpen: boolean;
   item: InventoryItem | null;
@@ -252,16 +409,6 @@ function InventoryFormModal({ isOpen, item, onClose, onSave, seeds }: InventoryF
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSeedSelect = (seedId: string) => {
-    set('seedId', seedId);
-    if (seedId) {
-      const seed = seeds.find((s) => s.id === seedId);
-      if (seed) {
-        set('varietyName', seed.commonName);
-        set('openPollinated', seed.openPollinated || false);
-      }
-    }
-  };
 
   const handleSave = () => {
     if (!form.varietyName.trim()) return;
@@ -297,23 +444,14 @@ function InventoryFormModal({ isOpen, item, onClose, onSave, seeds }: InventoryF
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="label">Link to Seed Database (optional)</label>
-          <select className="input" value={form.seedId} onChange={(e) => handleSeedSelect(e.target.value)}>
-            <option value="">Not linked</option>
-            {seeds.map((s) => <option key={s.id} value={s.id}>{s.commonName}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="label">Variety Name *</label>
-          <input
-            type="text"
-            className="input"
-            value={form.varietyName}
-            onChange={(e) => set('varietyName', e.target.value)}
-            placeholder="e.g. Sungold Tomato"
-          />
-        </div>
+        <SeedCombobox
+          seeds={seeds}
+          value={form.varietyName}
+          seedId={form.seedId}
+          onChange={(varietyName, seedId, openPollinated) => {
+            setForm((prev) => ({ ...prev, varietyName, seedId, openPollinated }));
+          }}
+        />
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Brand</label>
