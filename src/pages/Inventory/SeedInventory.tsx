@@ -132,6 +132,7 @@ export default function SeedInventory() {
       />
 
       <InventoryFormModal
+        key={editItem?.id ?? 'edit'}
         isOpen={!!editItem}
         item={editItem}
         onClose={() => setEditItem(null)}
