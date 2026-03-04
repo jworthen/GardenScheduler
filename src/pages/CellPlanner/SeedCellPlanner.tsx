@@ -71,7 +71,7 @@ export default function SeedCellPlanner() {
     seenKeys.add(key);
     inventorySeeds.push({
       seedId: seed?.id ?? `inv:${item.id}`,
-      varietyName: seed?.commonName ?? item.varietyName,
+      varietyName: item.varietyName,
       category: seed?.category ?? 'vegetable',
     });
   });
