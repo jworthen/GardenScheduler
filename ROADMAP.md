@@ -269,7 +269,8 @@ Standalone (no accounts needed):
     ├── Feature 9 (Companion Planting)
     ├── Feature 12 (Database Addition Requests)
     ├── Feature 13 (Seed Cell Planner)
-    └── Feature 14 (In-App Feedback)
+    ├── Feature 14 (In-App Feedback)
+    └── Feature 15 (Printable Seed Tags / QR Codes)
 ```
 
 ---
@@ -347,5 +348,39 @@ Let users send feature suggestions, bug reports, or general feedback without lea
 - [ ] Admin inbox view: list of submissions filterable by category and date
 - [ ] Auto-reply email acknowledging receipt (optional but friendly)
 - [ ] Optional in v2: upvoting / "me too" on surfaced suggestions
+
+---
+
+## Feature 15: Printable Seed Tags with QR Codes
+**No dependencies — standalone feature. Works even better with Feature 1 (accounts) for persistent tag URLs.**
+**Inspired by: MyFolia (QR code plant tags).**
+
+Generate print-ready tags for each plant in your garden. Each tag includes the variety name, sow date, and a QR code that links back to the plant's detail page in Last Frost — scan it in the garden to pull up care notes, harvest dates, and journal entries instantly.
+
+### How it works
+1. User selects one or more plants from their current plantings or stash
+2. The app generates a print-ready sheet of tags — multiple per page to minimize paper waste
+3. Each tag encodes a URL (or a local data payload for offline use) into a QR code
+4. User prints, cuts, and stakes tags in the garden or sticks them to seed packets
+5. Scanning the QR code in any phone camera opens the plant detail view in Last Frost
+
+### Tag content
+- Variety name (large, readable at a glance)
+- Plant type (e.g. Tomato, Basil)
+- Sow date / transplant date
+- QR code linking to the plant or planting record
+- Optional: days to maturity, spacing reminder, custom note
+
+### Scope
+- [ ] Tag generator: select plantings → generate tag sheet
+- [ ] QR code generation (client-side, no external service required)
+- [ ] Multiple tag sizes / layouts: standard stake tag (1×4"), round pot label, seed packet label
+- [ ] Print stylesheet: clean layout, no UI chrome, cuts cleanly on a grid
+- [ ] Offline-safe QR option: encode key data directly in the QR payload rather than a URL, so tags work without an internet connection
+- [ ] Optional: custom logo or garden name in the tag header
+
+### Notes
+- MyFolia's QR tags were one of its most distinctive and beloved features — worth emulating closely
+- For unauthenticated users, the QR code can encode a compact JSON payload (variety, dates, notes) directly so the tag remains useful even without an account or a live URL
 
 ---
