@@ -25,7 +25,7 @@ export default function SeedInventory() {
       }
       if (statusFilter !== 'all' && item.status !== statusFilter) return false;
       return true;
-    });
+    }).sort((a, b) => a.varietyName.localeCompare(b.varietyName));
   }, [inventory, search, statusFilter]);
 
   const stats = {
