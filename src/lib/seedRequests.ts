@@ -85,7 +85,9 @@ export async function rejectRequest(requestId: string, reviewNotes: string): Pro
 
 export async function getCommunitySeeds(): Promise<Seed[]> {
   const snap = await getDocs(collection(db, 'communitySeeds'));
-  return snap.docs.map((d) => d.data() as Seed);
+  return snap.docs
+    .map((d) => d.data() as Seed)
+    .filter((s) => s.id && s.commonName && s.botanicalName);
 }
 
 // ---------------------------------------------------------------------------

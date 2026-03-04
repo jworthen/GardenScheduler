@@ -254,9 +254,9 @@ function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
     if (!q) return [];
     return seeds.filter(
       (s) =>
-        s.commonName.toLowerCase().includes(q) ||
+        s.commonName?.toLowerCase().includes(q) ||
         s.subcategory?.toLowerCase().includes(q) ||
-        s.botanicalName.toLowerCase().includes(q),
+        s.botanicalName?.toLowerCase().includes(q),
     );
   }, [seeds, value]);
 
