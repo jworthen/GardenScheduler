@@ -251,7 +251,7 @@ function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
 
   const suggestions = useMemo(() => {
     const q = value.trim().toLowerCase();
-    if (!q) return seeds;
+    if (!q) return [];
     return seeds.filter(
       (s) =>
         s.commonName.toLowerCase().includes(q) ||
@@ -322,15 +322,17 @@ function SeedCombobox({ seeds, value, seedId, onChange }: SeedComboboxProps) {
       {/* Dropdown */}
       {open && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-xl shadow-lg max-h-72 overflow-y-auto">
-          {suggestions.length === 0 ? (
+          {value.trim() === '' ? (
+            <p className="px-3 py-3 text-sm text-gray-400">Start typing to search the seed database…</p>
+          ) : suggestions.length === 0 ? (
             <p className="px-3 py-3 text-sm text-gray-400">
               No matches — "{value}" will be saved as a custom variety.
             </p>
           ) : (
-            Array.from(grouped).map(([category, subMap]) =>
+            Array.from(grouped).flatMap(([category, subMap]) =>
               Array.from(subMap).map(([subcategory, groupSeeds]) => (
                 <div key={`${category}-${subcategory}`}>
-                  <div className="px-3 py-1.5 bg-stone-50 border-b border-stone-100 flex items-center gap-1 text-xs font-semibold text-gray-500 sticky top-0">
+                  <div className="px-3 py-1.5 bg-stone-50 border-b border-stone-100 flex items-center gap-1 text-xs font-semibold text-gray-500">
                     <span>{category}</span>
                     {subcategory && (
                       <>
