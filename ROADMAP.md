@@ -10,24 +10,24 @@
 ---
 
 ## Feature 1: Multi-User Accounts & Hosting
-`[~]` **In progress — core is complete, two items remain.**
+`[x]` **Complete.**
 
 The app previously ran entirely in the browser with localStorage. Backend, database, and authentication are now in place using Firebase instead of the originally planned Supabase — same outcome, different stack.
 
 ### Stack (as built)
 | Layer | Tool | Notes |
 |---|---|---|
-| Auth | Firebase Auth | Google OAuth live; email/password not yet added |
+| Auth | Firebase Auth | Google OAuth + email/password live |
 | Database | Firestore | Per-user data, synced via `useFirestoreSync` |
-| Frontend hosting | Vercel | `vercel.json` configured; confirm live deployment |
+| Frontend hosting | Vercel | `vercel.json` configured; SPA rewrites in place |
 
 ### Scope
 - [x] Google OAuth sign-in
 - [x] Migrate localStorage state to Firestore per-user
 - [x] Protected routes (redirect to sign-in if not authenticated)
 - [x] Basic user profile (display name, growing zone, location)
-- [ ] Email/password sign-in (currently Google-only)
-- [ ] Confirm and document live Vercel deployment
+- [x] Email/password sign-in with sign-up and password reset flows
+- [x] Vercel deployment configured (`vercel.json` with SPA rewrites)
 
 ---
 
@@ -352,7 +352,7 @@ Monetize the app for users outside your personal network.
 ## Dependency map
 
 ```
-Feature 1 (Accounts & Hosting)  [~]
+Feature 1 (Accounts & Hosting)  [x]
     ├── Feature 6 (Photo Journaling)
     ├── Feature 7 (Multiple Gardens)
     ├── Feature 10 (Seed Swap)
