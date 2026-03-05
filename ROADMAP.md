@@ -138,6 +138,7 @@ Follow GrowVeg's approach: only list companions supported by published research.
 ---
 
 ## Feature 6: Photo Journaling
+`[~]` **Partially complete.**
 **Requires: Feature 1 (for cloud image storage).**
 **Inspired by: MyFolia, Gardenize, Garden Tags, Growstuff.**
 
@@ -149,11 +150,13 @@ Let users attach photos to journal entries, planting records, and harvest logs t
 3. A garden gallery view shows all photos in reverse-chronological order
 
 ### Scope
-- [ ] Photo upload on journal entries (Firebase Storage)
-- [ ] Photo attachment on planting records and harvest logs
+- [x] Photo upload on journal entries (Firebase Storage)
+- [x] Photo attachment on planting records
+- [x] Garden gallery: all photos across journal entries and plantings in a grid view, filterable by source
+- [x] Photos deleted from Storage when parent entry or planting is removed
+- [x] Client-side 10 MB size guard before upload
+- [ ] Photo attachment on harvest logs (blocked on Feature 2)
 - [ ] Per-planting photo timeline (chronological, labeled by milestone or date)
-- [ ] Garden gallery: all photos across all plantings in a masonry/grid view
-- [ ] Thumbnail generation and lazy loading for performance
 - [ ] Optional: weather conditions auto-recorded alongside each photo entry (inspired by MyFolia)
 
 ---
@@ -209,30 +212,32 @@ Let users send feature suggestions, bug reports, or general feedback without lea
 ---
 
 ## Feature 9: User-Requested Database Additions
-`[~]` **Mostly complete — one item remains.**
+`[~]` **Mostly complete — reduced in scope given seed DB redesign direction.**
 
-Allow users to request that a new seed variety be added to the database. The user provides the type and variety; we research and populate the data, then make it available to everyone.
+Allow users to request that a new crop type be added to the database. Under the redesigned model (see Feature 15), the database covers species/crop types rather than individual varieties — so the request pipeline is narrower and lower-volume than originally planned.
 
 ### How it works
-1. User submits a request form with the plant type (e.g. "Tomato") and variety name (e.g. "Mortgage Lifter")
-2. The request is queued for review — either manually by an admin or via an automated lookup pipeline (seed company sites, USDA GRIN, etc.)
-3. Once verified and populated, the variety is added to the shared database and the requesting user is notified
+1. User submits a request for a missing crop type
+2. The request is queued for admin review, optionally auto-filled via OpenFarm API
+3. Once approved, the entry is available to all users
 
 ### Guardrails
-- Duplicate detection: check if the variety already exists before accepting the request
+- Duplicate detection: check if the entry already exists before accepting the request
 - Rate limiting: cap requests per user per day to prevent spam
-- Admin review queue: all new entries require approval before going live — no user can directly write to the seed database
-- Flagging system: existing users can flag incorrect or suspicious entries for re-review
-- Minimal required fields: a request must include at minimum plant type and variety name; freeform "additional info" is optional
+- Admin review queue: all new entries require approval before going live
+- Minimal required fields: plant type at minimum; freeform notes optional
 
 ### Scope
 - [x] Request submission form (type + variety + optional notes)
 - [x] Duplicate check against existing database entries on submission
 - [x] Admin review queue UI (approve / reject / request more info)
-- [x] Automated pre-population via OpenFarm API — "Auto-fill" button in the approve modal fetches botanical name, growing notes, light requirement, sowing method, and spacing; admin can edit before saving
+- [x] Automated pre-population via OpenFarm API — "Auto-fill" button in the approve modal
 - [x] Rate limiting: 5 requests per user per day
 - [ ] Email/notification to user when their request is approved or rejected
-- [ ] Ability for users to submit corrections to existing seed database entries (e.g. wrong spacing, outdated growing notes) — routed to the same admin review queue as new-addition requests
+- [ ] Ability for users to submit corrections to existing crop entries (e.g. wrong spacing) — routed to the same admin review queue
+
+### Note
+If Feature 15 ships, variety-level requests go away entirely; the queue becomes strictly for missing crop types, which will be infrequent. The admin UI and rate limiting remain useful regardless.
 
 ---
 
@@ -383,23 +388,146 @@ Users bring their own variety name and attach it to a species record. The workfl
 
 ---
 
+## Feature 15: Seed Database Redesign — Species-Level Model
+**No hard dependencies, but should be done before the user base grows large.**
 
+Redesign the seed database from a variety-focused list to a species/crop-type backbone where agronomic data lives, and let users supply their own variety names. See the Design Note section for full rationale.
+
+### How it works
+1. The database contains ~100–200 crop type records (e.g. "Tomato — Indeterminate", "Basil — Large Leaf", "Carrot") with fully curated agronomic data: sowing depth, spacing, days to maturity range, frost tolerance, light needs
+2. When adding a planting, the user picks a crop type, then types their variety name freely
+3. Planting date calculations and task generation key off the crop type; the variety name is display-only
+4. Existing planting records migrate cleanly: `seedId` still points to a crop type record; the user's variety name lives in a new `varietyName` field
+
+### Scope
+- [ ] Audit and flatten current seed database to species/crop-type level — remove redundant variety-specific records, keep or split where agronomic data meaningfully differs (e.g. "Tomato — Cherry" vs "Tomato — Beefsteak" have different spacing and days to maturity)
+- [ ] Add `varietyName` free-text field to `PlantingEntry`; update calendar, tags, and journal to display it
+- [ ] Update "Add Plant" flow: step 1 picks a crop type, step 2 is a free-text variety name
+- [ ] Update cell planner seed picker: shows crop types; user labels cells with variety name
+- [ ] Optional: allow per-planting override of days-to-maturity (for unusually early or late varieties)
+- [ ] Revise Feature 9 admin queue to handle only missing crop type requests, not variety additions
+
+### Notes
+- "What Can I Plant" tool, companion planting, and cell planner color coding all key off category/type — unaffected
+- Inventory already uses free-text variety names; the planting flow is the main gap
+- Granularity rule of thumb: split crop types only when agronomic data meaningfully differs (spacing, sowing method, days to maturity range)
+
+---
+
+## Feature 16: Garden Bed Manager
+**No dependencies — enriches most other features.**
+
+Make "bed location" a real entity rather than a free-text field. Named, dimensioned beds unlock per-bed planting history, companion checks, and eventually a visual layout.
+
+### How it works
+1. User defines their beds once (name, dimensions, notes) — e.g. "Raised Bed A (4×8 ft)", "Front Border", "Greenhouse Bench"
+2. When adding a planting, bed location is a dropdown of named beds rather than a text field
+3. The calendar and dashboard can filter by bed; per-bed history builds over seasons
+
+### Scope
+- [ ] Bed model: id, name, width, length, notes, indoor flag (for seed-starting areas)
+- [ ] Bed manager UI (settings page or dedicated section): create, edit, reorder, delete beds
+- [ ] Planting form: "Bed Location" becomes a dropdown with an inline "add new bed" option
+- [ ] Calendar / timeline: filter by bed
+- [ ] Dashboard: per-bed planting count for the current season
+- [ ] Optional: per-bed yield history once Feature 2 (Harvest Tracking) ships
+- [ ] Optional: "What's in this bed" summary — all current and past plantings for a given bed
+
+### Notes
+- Lays the groundwork for a drag-and-drop visual garden map later
+- Beds scoped per garden if Feature 7 (Multiple Gardens) ships
+
+---
+
+## Feature 17: Task Notifications
+**Requires: Feature 1.**
+
+Push upcoming tasks and frost warnings to users so they don't have to open the app every day to stay on schedule.
+
+### How it works
+1. User opts into notifications and sets delivery preferences
+2. A daily digest lists tasks due today and coming up; frost alerts fire when the forecast dips near the user's threshold
+
+### Scope
+- [ ] Notification preferences: on/off, lead time (1 / 3 / 7 days ahead), delivery method (email / browser push)
+- [ ] Daily digest email: tasks due today + next 3 days, formatted cleanly, unsubscribe link
+- [ ] Browser push notification support (service worker + Web Push API)
+- [ ] Frost warning: triggered when forecast low ≤ last spring frost temp + configurable buffer
+- [ ] Scheduled Cloud Function (or cron job) to evaluate and send notifications
+- [ ] Snooze / unsubscribe controls in the app
+
+### Notes
+- Email delivery via Firebase Trigger Email extension or a transactional provider (Resend, SendGrid)
+- Frost alerts require a weather API — Open-Meteo is free, accurate, and requires no API key
+- Ship email-only first; push notifications follow once the email flow is stable
+
+---
+
+## Feature 18: Season Management & Year-Over-Year History
+**No hard dependencies — more valuable once users have completed at least one season.**
+
+Make the app aware of seasons so users can start fresh each year without losing history.
+
+### How it works
+1. A year picker scopes the calendar, tasks, and dashboard to the active season
+2. A "New Season" wizard at year-start lets users archive the old season and carry forward recurring plantings
+3. Past seasons stay fully browsable
+
+### Scope
+- [ ] Season / year selector in the sidebar or header that scopes calendar, tasks, and dashboard
+- [ ] "Start New Season" wizard: review last year's plantings, select which to carry forward (with recalculated dates), archive the rest
+- [ ] Archived season view: read-only calendar and journal for past years
+- [ ] Dashboard year-over-year note: e.g. "You started tomatoes 3 weeks earlier this year than last"
+- [ ] Perennial / recurring planting flag: marks a planting to auto-seed into the new season
+- [ ] Optional: end-of-season summary entry — freeform "season retrospective" journal type
+
+---
+
+## Feature 19: Pest & Disease Log
+**No dependencies — natural extension of the journal.**
+**Inspired by: MyFolia, Growstuff, GrowVeg.**
+
+Record pest sightings and disease observations linked to specific plantings so problems can be tracked and patterns spotted across seasons.
+
+### How it works
+1. From any planting detail, the user logs an observation — pest spotted, disease signs, environmental damage
+2. Observations are tagged by type and severity; photos (Feature 6) can be attached
+3. Active high-severity issues surface on the dashboard
+
+### Scope
+- [ ] Observation model: plantingId, date, type (pest / disease / environmental), name, severity (low / medium / high), notes, photos
+- [ ] "Log Observation" button on planting detail panel
+- [ ] Observations list on planting detail: chronological with severity badges
+- [ ] Dashboard alert for plantings with active high-severity observations
+- [ ] Optional: common pest/disease name lookup with basic treatment notes
+- [ ] Optional: season-level observation history, filterable by type
+
+---
+
+## Dependency map
 
 ```
 Feature 1 (Accounts & Hosting)  [x]
-    ├── Feature 6 (Photo Journaling)
+    ├── Feature 6 (Photo Journaling)  [~]
     ├── Feature 7 (Multiple Gardens)
     ├── Feature 10 (Seed Swap)
     │       └── Feature 12 (Serendipity Labels)
     ├── Feature 11 (Plant Share)
     ├── Feature 13 (Community Profiles & Feed)
-    └── Feature 14 (Payments)  ← also depends on 10 & 11 being worth paying for
+    ├── Feature 14 (Payments)  ← also depends on 10 & 11 being worth paying for
+    └── Feature 17 (Task Notifications)  ← needs email/push infrastructure
 
 Standalone (no accounts needed):
     ├── Feature 2 (Harvest Tracking)
+    │       └── Feature 6 remaining scope (harvest log photos)
     ├── Feature 3 (Printable Seed Tags / QR Codes)
-    ├── Feature 4 (Seed Cell Planner)
+    ├── Feature 4 (Seed Cell Planner)  [x]
     ├── Feature 5 (Companion Planting)
     ├── Feature 8 (In-App Feedback)
-    └── Feature 9 (Database Addition Requests)
+    ├── Feature 9 (Database Addition Requests)  [~]
+    │       └── Feature 15 (Seed DB Redesign — narrows request scope)
+    ├── Feature 15 (Seed DB Redesign)
+    ├── Feature 16 (Garden Bed Manager)
+    ├── Feature 18 (Season Management)
+    └── Feature 19 (Pest & Disease Log)
 ```
