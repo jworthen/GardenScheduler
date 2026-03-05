@@ -121,6 +121,7 @@ export default function SeedInventory() {
       </div>
 
       <InventoryFormModal
+        key={showAdd ? 'add-open' : 'add-closed'}
         isOpen={showAdd}
         item={null}
         onClose={() => setShowAdd(false)}
