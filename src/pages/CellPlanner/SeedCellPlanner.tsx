@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Grid3X3, Plus, Trash2, Printer, ChevronRight, X, Eraser, Sprout } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
-import { CellPlan, PlantCategory, Seed } from '../../types';
+import { CellPlan, InventoryItem, PlantCategory, Seed } from '../../types';
 import PageHeader from '../../components/common/PageHeader';
 
 function generateId() {
@@ -16,11 +16,12 @@ function generateId() {
 interface StartPlantingsModalProps {
   plan: CellPlan;
   allSeeds: Seed[];
+  inventory: InventoryItem[];
   addPlanting: (seedId: string, seed: Seed, options?: { quantity?: number; bedLocation?: string; year?: number }) => void;
   onClose: () => void;
 }
 
-function StartPlantingsModal({ plan, allSeeds, addPlanting, onClose }: StartPlantingsModalProps) {
+function StartPlantingsModal({ plan, allSeeds, inventory, addPlanting, onClose }: StartPlantingsModalProps) {
   const seedGroups = useMemo(() => {
     const map = new Map<string, { seedId: string; varietyName: string; category: PlantCategory; count: number }>();
     Object.values(plan.cells).forEach((cell) => {
@@ -50,6 +51,12 @@ function StartPlantingsModal({ plan, allSeeds, addPlanting, onClose }: StartPlan
       if (!checked.has(group.seedId)) return;
 
       let seed = allSeeds.find((s) => s.id === group.seedId);
+      // For inv: IDs, resolve through the inventory item to get the db seed (and its schedule data)
+      if (!seed && group.seedId.startsWith('inv:')) {
+        const invItemId = group.seedId.slice(4);
+        const invItem = inventory.find((i) => i.id === invItemId);
+        if (invItem?.seedId) seed = allSeeds.find((s) => s.id === invItem.seedId);
+      }
       if (!seed) {
         // Stub for unlinked custom seeds — no schedule dates will be generated
         seed = {
@@ -133,7 +140,8 @@ function StartPlantingsModal({ plan, allSeeds, addPlanting, onClose }: StartPlan
 
         <div className="overflow-y-auto flex-1 -mx-1 px-1 space-y-1">
           {seedGroups.map((group) => {
-            const hasDbLink = !group.seedId.startsWith('inv:');
+            const hasDbLink = !group.seedId.startsWith('inv:') ||
+              inventory.some((i) => i.id === group.seedId.slice(4) && i.seedId);
             return (
               <label
                 key={group.seedId}
@@ -204,7 +212,8 @@ const CATEGORY_ACCENT: Record<PlantCategory, string> = {
 };
 
 interface SeedOption {
-  seedId: string;
+  seedId: string;   // inv:<itemId> for inventory items; seed db id for search results
+  itemId?: string;  // inventory item id — unique per packet
   varietyName: string;
   category: PlantCategory;
 }
@@ -236,24 +245,24 @@ export default function SeedCellPlanner() {
   const activePlan = cellPlans.find((p) => p.id === activePlanId) ?? null;
   const allSeeds = getAllSeeds();
 
-  // All non-empty inventory items, deduplicated by seedId (or varietyName for unlinked items)
-  const inventorySeeds: SeedOption[] = [];
-  const seenKeys = new Set<string>();
-  inventory.forEach((item) => {
-    if (item.status === 'empty') return;
-    const seed = item.seedId ? allSeeds.find((s) => s.id === item.seedId) : undefined;
-    const key = seed ? `seed:${seed.id}` : `name:${item.varietyName.toLowerCase()}`;
-    if (seenKeys.has(key)) return;
-    seenKeys.add(key);
-    inventorySeeds.push({
-      seedId: seed?.id ?? `inv:${item.id}`,
-      varietyName: item.varietyName,
-      category: seed?.category ?? 'vegetable',
-    });
-  });
-  inventorySeeds.sort((a, b) => a.varietyName.localeCompare(b.varietyName));
+  // One entry per non-empty inventory packet — no deduplication
+  const inventorySeeds: SeedOption[] = inventory
+    .filter((item) => item.status !== 'empty')
+    .map((item) => {
+      const seed = item.seedId ? allSeeds.find((s) => s.id === item.seedId) : undefined;
+      return {
+        seedId: `inv:${item.id}`,   // always unique per packet
+        itemId: item.id,
+        varietyName: item.varietyName,
+        category: seed?.category ?? 'vegetable',
+      };
+    })
+    .sort((a, b) => a.varietyName.localeCompare(b.varietyName));
 
-  const inventorySeedIds = new Set(inventorySeeds.map((i) => i.seedId));
+  // Set of db seed ids present in inventory — used for "in stash" badge in search
+  const inventorySeedIds = new Set(
+    inventory.filter((i) => i.status !== 'empty' && i.seedId).map((i) => i.seedId!)
+  );
 
   const filteredAllSeeds = seedSearch.trim()
     ? allSeeds
@@ -676,10 +685,10 @@ export default function SeedCellPlanner() {
                   </div>
                   {inventorySeeds.map((opt) => (
                     <button
-                      key={opt.seedId}
+                      key={opt.itemId ?? opt.seedId}
                       onClick={() => selectSeed(opt)}
                       className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
-                        activeSeed?.seedId === opt.seedId
+                        activeSeed?.itemId === opt.itemId
                           ? 'bg-garden-50 text-garden-700'
                           : 'text-gray-600 hover:bg-stone-50'
                       }`}
@@ -706,6 +715,7 @@ export default function SeedCellPlanner() {
         <StartPlantingsModal
           plan={activePlan}
           allSeeds={allSeeds}
+          inventory={inventory}
           addPlanting={addPlanting}
           onClose={() => setShowStartPlantings(false)}
         />
