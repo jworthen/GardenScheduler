@@ -1,25 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Settings as SettingsIcon, MapPin, Bell, Palette, Download, Trash2, AlertTriangle, User, ChevronRight, Rows3, Plus, Pencil, Check, X } from 'lucide-react';
+import { MapPin, Palette, Download, User, ChevronRight } from 'lucide-react';
 import { useGardenStore } from '../../store/useStore';
 import { useAuth } from '../../contexts/AuthContext';
 import { lookupFrostDatesByZip, zoneData } from '../../data/frostDates';
 import PageHeader from '../../components/common/PageHeader';
-import { GardenBed } from '../../types';
-
-const EMPTY_BED_FORM = { name: '', widthFt: '', lengthFt: '', notes: '', indoor: false };
 
 export default function Settings() {
   const { user } = useAuth();
-  const { settings, updateSettings, setLocation, beds, addBed, updateBed, removeBed } = useGardenStore();
+  const { settings, updateSettings, setLocation } = useGardenStore();
   const [saved, setSaved] = useState(false);
   const [zipInput, setZipInput] = useState(settings.location.zipCode || '');
-
-  // Bed manager state
-  const [addingBed, setAddingBed] = useState(false);
-  const [newBed, setNewBed] = useState(EMPTY_BED_FORM);
-  const [editingBedId, setEditingBedId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState(EMPTY_BED_FORM);
 
   const { location, preferences } = settings;
 
@@ -50,42 +41,6 @@ export default function Settings() {
   const formatFrostDate = (mmdd: string) => {
     const [m, d] = mmdd.split('-').map(Number);
     return new Date(2024, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-  };
-
-  const handleAddBed = () => {
-    if (!newBed.name.trim()) return;
-    addBed({
-      name: newBed.name.trim(),
-      widthFt: newBed.widthFt ? Number(newBed.widthFt) : undefined,
-      lengthFt: newBed.lengthFt ? Number(newBed.lengthFt) : undefined,
-      notes: newBed.notes.trim() || undefined,
-      indoor: newBed.indoor,
-    });
-    setNewBed(EMPTY_BED_FORM);
-    setAddingBed(false);
-  };
-
-  const startEditBed = (bed: GardenBed) => {
-    setEditingBedId(bed.id);
-    setEditForm({
-      name: bed.name,
-      widthFt: bed.widthFt?.toString() ?? '',
-      lengthFt: bed.lengthFt?.toString() ?? '',
-      notes: bed.notes ?? '',
-      indoor: bed.indoor,
-    });
-  };
-
-  const handleSaveEditBed = () => {
-    if (!editingBedId || !editForm.name.trim()) return;
-    updateBed(editingBedId, {
-      name: editForm.name.trim(),
-      widthFt: editForm.widthFt ? Number(editForm.widthFt) : undefined,
-      lengthFt: editForm.lengthFt ? Number(editForm.lengthFt) : undefined,
-      notes: editForm.notes.trim() || undefined,
-      indoor: editForm.indoor,
-    });
-    setEditingBedId(null);
   };
 
   const handleExport = () => {
@@ -285,212 +240,6 @@ export default function Settings() {
               </div>
             </label>
           </div>
-        </section>
-
-        {/* Garden Beds */}
-        <section className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Rows3 className="text-garden-600" size={18} />
-              <h2 className="font-bold text-gray-900">Garden Beds</h2>
-            </div>
-            {!addingBed && (
-              <button
-                onClick={() => setAddingBed(true)}
-                className="btn-secondary text-sm py-1.5 px-3"
-              >
-                <Plus size={14} /> Add Bed
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            {beds.map((bed) =>
-              editingBedId === bed.id ? (
-                /* Edit form */
-                <div key={bed.id} className="border border-garden-300 rounded-xl p-3 space-y-3 bg-garden-50">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <label className="label">Bed Name *</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={editForm.name}
-                        onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                        autoFocus
-                      />
-                    </div>
-                    <div>
-                      <label className="label">Width (ft)</label>
-                      <input
-                        type="number"
-                        className="input"
-                        min={1}
-                        value={editForm.widthFt}
-                        onChange={(e) => setEditForm((f) => ({ ...f, widthFt: e.target.value }))}
-                        placeholder="e.g. 4"
-                      />
-                    </div>
-                    <div>
-                      <label className="label">Length (ft)</label>
-                      <input
-                        type="number"
-                        className="input"
-                        min={1}
-                        value={editForm.lengthFt}
-                        onChange={(e) => setEditForm((f) => ({ ...f, lengthFt: e.target.value }))}
-                        placeholder="e.g. 8"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="label">Notes (optional)</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={editForm.notes}
-                        onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
-                        placeholder="e.g. Full sun, amended with compost"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <input
-                          type="checkbox"
-                          className="rounded w-4 h-4"
-                          checked={editForm.indoor}
-                          onChange={(e) => setEditForm((f) => ({ ...f, indoor: e.target.checked }))}
-                        />
-                        Indoor / seed-starting area
-                      </label>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={() => setEditingBedId(null)} className="btn-secondary text-sm py-1.5 px-3">
-                      <X size={14} /> Cancel
-                    </button>
-                    <button onClick={handleSaveEditBed} disabled={!editForm.name.trim()} className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50">
-                      <Check size={14} /> Save
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Bed row */
-                <div key={bed.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-stone-200 bg-white group">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-gray-900">{bed.name}</span>
-                      {bed.indoor && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Indoor</span>
-                      )}
-                      {bed.widthFt && bed.lengthFt && (
-                        <span className="text-xs text-gray-400">{bed.widthFt}×{bed.lengthFt} ft</span>
-                      )}
-                    </div>
-                    {bed.notes && <p className="text-xs text-gray-400 mt-0.5 truncate">{bed.notes}</p>}
-                  </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                    <button
-                      onClick={() => startEditBed(bed)}
-                      className="p-1.5 rounded-lg hover:bg-stone-100 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Edit bed"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={() => removeBed(bed.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                      title="Delete bed"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              )
-            )}
-
-            {beds.length === 0 && !addingBed && (
-              <p className="text-sm text-gray-400 text-center py-4">
-                No beds yet. Add your garden beds to use them when planning plantings.
-              </p>
-            )}
-          </div>
-
-          {/* Add bed form */}
-          {addingBed && (
-            <div className="border border-garden-300 rounded-xl p-3 space-y-3 bg-garden-50 mt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <label className="label">Bed Name *</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={newBed.name}
-                    onChange={(e) => setNewBed((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="e.g. Raised Bed A, North Border"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="label">Width (ft)</label>
-                  <input
-                    type="number"
-                    className="input"
-                    min={1}
-                    value={newBed.widthFt}
-                    onChange={(e) => setNewBed((f) => ({ ...f, widthFt: e.target.value }))}
-                    placeholder="e.g. 4"
-                  />
-                </div>
-                <div>
-                  <label className="label">Length (ft)</label>
-                  <input
-                    type="number"
-                    className="input"
-                    min={1}
-                    value={newBed.lengthFt}
-                    onChange={(e) => setNewBed((f) => ({ ...f, lengthFt: e.target.value }))}
-                    placeholder="e.g. 8"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="label">Notes (optional)</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={newBed.notes}
-                    onChange={(e) => setNewBed((f) => ({ ...f, notes: e.target.value }))}
-                    placeholder="e.g. Full sun, amended with compost"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      className="rounded w-4 h-4"
-                      checked={newBed.indoor}
-                      onChange={(e) => setNewBed((f) => ({ ...f, indoor: e.target.checked }))}
-                    />
-                    Indoor / seed-starting area
-                  </label>
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => { setAddingBed(false); setNewBed(EMPTY_BED_FORM); }}
-                  className="btn-secondary text-sm py-1.5 px-3"
-                >
-                  <X size={14} /> Cancel
-                </button>
-                <button
-                  onClick={handleAddBed}
-                  disabled={!newBed.name.trim()}
-                  className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50"
-                >
-                  <Plus size={14} /> Add Bed
-                </button>
-              </div>
-            </div>
-          )}
         </section>
 
         {/* Data Management */}

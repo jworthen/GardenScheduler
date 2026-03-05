@@ -13,6 +13,7 @@ import {
   User,
   Grid3X3,
   Images,
+  Rows3,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
@@ -27,6 +28,7 @@ const navItems = [
   { to: '/gallery', icon: Images, label: 'Gallery' },
   { to: '/tools', icon: Wrench, label: 'Tools' },
   { to: '/cell-planner', icon: Grid3X3, label: 'Cell Planner' },
+  { to: '/beds', icon: Rows3, label: 'Garden Beds' },
 ];
 
 export default function Sidebar() {
