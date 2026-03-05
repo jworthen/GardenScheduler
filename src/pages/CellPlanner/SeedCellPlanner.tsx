@@ -372,7 +372,11 @@ export default function SeedCellPlanner() {
         @media print {
           body { margin: 0; }
           .cell-grid-wrapper { page-break-inside: avoid; }
-          ${activePlan && activePlan.cols > activePlan.rows ? '@page { size: landscape; }' : ''}
+          ${activePlan && activePlan.cols > activePlan.rows
+            ? `@page { size: landscape; }
+               .cell-grid { width: 100%; }
+               .cell-grid { grid-template-columns: repeat(${activePlan.cols}, 1fr) !important; }`
+            : ''}
         }
       `}</style>
 
@@ -510,7 +514,7 @@ export default function SeedCellPlanner() {
 
               {/* Grid */}
               <div
-                className="inline-grid gap-px bg-stone-300 border border-stone-300 rounded overflow-hidden"
+                className="cell-grid inline-grid gap-px bg-stone-300 border border-stone-300 rounded overflow-hidden"
                 style={{
                   gridTemplateColumns: `repeat(${activePlan.cols}, minmax(2.5rem, 4rem))`,
                 }}
