@@ -351,7 +351,39 @@ Monetize the app for users outside your personal network.
 
 ---
 
-## Dependency map
+## Design Note: Seed Database Model
+
+**The current approach isn't scalable.** The built-in seed database tries to ship a curated list of specific varieties, but no fixed dataset can cover the range of what real gardeners actually grow. Some observations:
+
+- There are tens of thousands of tomato varieties alone — any static list will always feel thin or arbitrary
+- The request pipeline (Feature 9) was designed to patch this gap, but it doesn't scale operationally
+- Users already type in their own variety names when adding to inventory — they don't need us to have their exact variety pre-loaded
+
+**Direction to explore: high-level species as the backbone, user-supplied variety names**
+
+Keep the database at the *species / crop type* level (Tomato, Basil, French Filet Bean, etc.) rather than the variety level. This is where the useful agronomic data lives anyway — frost tolerance, days to maturity ranges, spacing, sowing depth, light needs. Specific variety differences (days to maturity variance, flavor, color) are refinements, not the core.
+
+Users bring their own variety name and attach it to a species record. The workflow would look like:
+
+1. User picks a crop type from the database (e.g. "Tomato — Indeterminate")
+2. They enter their own variety name (e.g. "Cherokee Purple") — free text, no lookup required
+3. Planting dates and care tasks are calculated from the species-level data
+4. Their variety name shows up on their calendar, tags, and journal — everything feels personal
+
+**What this changes:**
+- Feature 9 (database addition requests) becomes less important — you're no longer crowdsourcing variety records, just fixing or adding crop types
+- The seed database becomes a set of maybe 100–200 species/type entries, all fully curated and trusted, instead of an ever-growing list of varieties
+- Companion planting (Feature 5) and cell planner color coding stay the same — those key off category/species, not variety
+- Inventory already supports free-text variety names — the rest of the app needs to catch up
+
+**Open questions:**
+- How granular should "species" be? (e.g. is "Tomato — Cherry" a separate record from "Tomato — Beefsteak", or just one "Tomato" record with a size note?)
+- Should users be able to override the species-level agronomic data per-variety? (e.g. a particularly early variety with shorter days to maturity)
+- Does this change how Feature 10 (Seed Swap) works? Users swapping specific varieties still need to describe what they have — probably just free text.
+
+---
+
+
 
 ```
 Feature 1 (Accounts & Hosting)  [x]
