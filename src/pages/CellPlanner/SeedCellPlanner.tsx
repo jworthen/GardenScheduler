@@ -241,6 +241,10 @@ export default function SeedCellPlanner() {
   const [newRows, setNewRows] = useState(8);
   const [seedSearch, setSeedSearch] = useState('');
   const paintingRef = useRef(false);
+  const dragSourceRef = useRef<string | null>(null);
+  const dragTargetRef = useRef<string | null>(null);
+  const [dragSourceKey, setDragSourceKey] = useState<string | null>(null);
+  const [dragTargetKey, setDragTargetKey] = useState<string | null>(null);
 
   const activePlan = cellPlans.find((p) => p.id === activePlanId) ?? null;
   const allSeeds = getAllSeeds();
@@ -323,6 +327,24 @@ export default function SeedCellPlanner() {
       const key = `${col}-${row}`;
       const newCells = { ...activePlan.cells };
       delete newCells[key];
+      updateCellPlan(activePlan.id, { cells: newCells, updatedAt: new Date().toISOString() });
+    },
+    [activePlan, updateCellPlan]
+  );
+
+  const cancelDrag = useCallback(() => {
+    dragSourceRef.current = null;
+    dragTargetRef.current = null;
+    setDragSourceKey(null);
+    setDragTargetKey(null);
+  }, []);
+
+  const moveCell = useCallback(
+    (fromKey: string, toKey: string) => {
+      if (!activePlan || fromKey === toKey) return;
+      const newCells = { ...activePlan.cells };
+      newCells[toKey] = newCells[fromKey];
+      delete newCells[fromKey];
       updateCellPlan(activePlan.id, { cells: newCells, updatedAt: new Date().toISOString() });
     },
     [activePlan, updateCellPlan]
@@ -519,6 +541,13 @@ export default function SeedCellPlanner() {
                   gridTemplateColumns: `repeat(${activePlan.cols}, minmax(2.5rem, 4rem))`,
                 }}
                 onDragStart={(e) => e.preventDefault()}
+                onMouseUp={() => {
+                  if (dragSourceRef.current && dragTargetRef.current) {
+                    moveCell(dragSourceRef.current, dragTargetRef.current);
+                  }
+                  cancelDrag();
+                }}
+                onMouseLeave={cancelDrag}
               >
                 {Array.from({ length: activePlan.rows }, (_, row) =>
                   Array.from({ length: activePlan.cols }, (_, col) => {
@@ -532,15 +561,33 @@ export default function SeedCellPlanner() {
                         style={{
                           backgroundColor: cat ? CATEGORY_BG[cat] : '#ffffff',
                           borderLeft: cat ? `3px solid ${CATEGORY_ACCENT[cat]}` : '3px solid transparent',
+                          opacity: dragSourceKey === key ? 0.4 : 1,
+                          outline: dragTargetKey === key && dragSourceKey !== key ? '2px solid #4f7c3f' : 'none',
+                          outlineOffset: '-2px',
                         }}
-                        className="min-h-[2.5rem] p-1 cursor-pointer select-none flex flex-col justify-center"
+                        className={`min-h-[2.5rem] p-1 select-none flex flex-col justify-center ${
+                          cell && !activeSeed && !isErasing ? 'cursor-grab' : 'cursor-pointer'
+                        }`}
                         onMouseDown={(e) => {
                           if (e.button !== 0) return;
-                          paintingRef.current = true;
-                          paintCell(col, row);
+                          if (cell && !activeSeed && !isErasing) {
+                            // Start move drag
+                            dragSourceRef.current = key;
+                            dragTargetRef.current = key;
+                            setDragSourceKey(key);
+                            setDragTargetKey(key);
+                          } else {
+                            paintingRef.current = true;
+                            paintCell(col, row);
+                          }
                         }}
                         onMouseEnter={() => {
-                          if (paintingRef.current) paintCell(col, row);
+                          if (dragSourceRef.current) {
+                            dragTargetRef.current = key;
+                            setDragTargetKey(key);
+                          } else if (paintingRef.current) {
+                            paintCell(col, row);
+                          }
                         }}
                         onContextMenu={(e) => {
                           e.preventDefault();
