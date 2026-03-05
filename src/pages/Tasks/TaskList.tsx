@@ -337,7 +337,7 @@ function AddTaskModal({ isOpen, onClose }: AddTaskModalProps) {
             <select className="input" value={plantingId} onChange={(e) => setPlantingId(e.target.value)}>
               <option value="">Not linked</option>
               {plantings.map((p) => (
-                <option key={p.id} value={p.id}>{p.seedName}</option>
+                <option key={p.id} value={p.id}>{p.varietyName ? `${p.varietyName} (${p.seedName})` : p.seedName}</option>
               ))}
             </select>
           </div>

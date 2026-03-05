@@ -13,6 +13,7 @@ interface AddToCalendarModalProps {
 
 export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModalProps) {
   const { settings, addPlanting, beds } = useGardenStore();
+  const [varietyName, setVarietyName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [bedLocation, setBedLocation] = useState('');
@@ -25,7 +26,7 @@ export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModal
   const dates = calculatePlantingDates(seed, frostDate, year);
 
   const handleAdd = () => {
-    addPlanting(seed.id, seed, { quantity, notes, bedLocation, year });
+    addPlanting(seed.id, seed, { quantity, notes, bedLocation, year, varietyName: varietyName.trim() || undefined });
     setAdded(true);
     setTimeout(() => {
       onClose();
@@ -100,6 +101,21 @@ export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModal
           )}
           <p className="text-xs text-gray-400 mt-3">
             Based on last frost: {formatDisplayDate(frostDate)}
+          </p>
+        </div>
+
+        {/* Variety Name */}
+        <div>
+          <label className="label">Variety Name (optional)</label>
+          <input
+            type="text"
+            className="input"
+            placeholder={`e.g. Sungold, Brandywine, Early Girl`}
+            value={varietyName}
+            onChange={(e) => setVarietyName(e.target.value)}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            The specific variety of {seed.commonName} you're growing.
           </p>
         </div>
 

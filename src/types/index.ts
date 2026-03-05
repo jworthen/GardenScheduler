@@ -71,6 +71,7 @@ export interface PlantingEntry {
   id: string;
   seedId: string;
   seedName: string;
+  varietyName?: string;
   botanicalName?: string;
   category: PlantCategory;
   color: string;

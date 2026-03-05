@@ -151,17 +151,18 @@ export function generateTasksForPlanting(
     });
   };
 
-  taskDef('start-indoors', `Start ${planting.seedName} indoors`, planting.indoorStartDate);
-  taskDef('pot-up', `Pot up ${planting.seedName} seedlings`, planting.potUpDate);
-  taskDef('begin-hardening', `Begin hardening off ${planting.seedName}`, planting.hardeningOffStart);
-  taskDef('transplant', `Transplant ${planting.seedName} outdoors`, planting.transplantDate);
-  taskDef('direct-sow', `Direct sow ${planting.seedName}`, planting.directSowDate);
-  taskDef('first-harvest', `First ${planting.seedName} harvest expected`, planting.firstHarvestDate);
-  taskDef('first-bloom', `${planting.seedName} expected to bloom`, planting.firstBloomDate);
+  const n = planting.varietyName || planting.seedName;
+  taskDef('start-indoors', `Start ${n} indoors`, planting.indoorStartDate);
+  taskDef('pot-up', `Pot up ${n} seedlings`, planting.potUpDate);
+  taskDef('begin-hardening', `Begin hardening off ${n}`, planting.hardeningOffStart);
+  taskDef('transplant', `Transplant ${n} outdoors`, planting.transplantDate);
+  taskDef('direct-sow', `Direct sow ${n}`, planting.directSowDate);
+  taskDef('first-harvest', `First ${n} harvest expected`, planting.firstHarvestDate);
+  taskDef('first-bloom', `${n} expected to bloom`, planting.firstBloomDate);
 
   if (seed.spacing && planting.directSowDate) {
     const thinDate = addDays(parseISO(planting.directSowDate), seed.daysToGermination.max + 14);
-    taskDef('thin-seedlings', `Thin ${planting.seedName} seedlings`, formatDate(thinDate));
+    taskDef('thin-seedlings', `Thin ${n} seedlings`, formatDate(thinDate));
   }
 
   return tasks;

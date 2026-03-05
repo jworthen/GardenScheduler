@@ -55,11 +55,12 @@ export default function PlantingCalendar() {
   };
 
   plantings.forEach((p) => {
-    if (p.indoorStartDate) addEvent(p.indoorStartDate, p.id, p.seedName, p.color, 'start-indoors', '🌱 Start');
-    if (p.transplantDate) addEvent(p.transplantDate, p.id, p.seedName, p.color, 'transplant', '🌿 Transplant');
-    if (p.directSowDate) addEvent(p.directSowDate, p.id, p.seedName, p.color, 'direct-sow', '🌾 Direct Sow');
-    if (p.firstHarvestDate) addEvent(p.firstHarvestDate, p.id, p.seedName, p.color, 'harvest', '🥕 Harvest');
-    if (p.firstBloomDate) addEvent(p.firstBloomDate, p.id, p.seedName, p.color, 'bloom', '🌸 Bloom');
+    const displayName = p.varietyName || p.seedName;
+    if (p.indoorStartDate) addEvent(p.indoorStartDate, p.id, displayName, p.color, 'start-indoors', '🌱 Start');
+    if (p.transplantDate) addEvent(p.transplantDate, p.id, displayName, p.color, 'transplant', '🌿 Transplant');
+    if (p.directSowDate) addEvent(p.directSowDate, p.id, displayName, p.color, 'direct-sow', '🌾 Direct Sow');
+    if (p.firstHarvestDate) addEvent(p.firstHarvestDate, p.id, displayName, p.color, 'harvest', '🥕 Harvest');
+    if (p.firstBloomDate) addEvent(p.firstBloomDate, p.id, displayName, p.color, 'bloom', '🌸 Bloom');
   });
 
   return (
@@ -129,7 +130,7 @@ export default function PlantingCalendar() {
           planting={selectedPlanting}
           onClose={() => setSelectedPlantingId(null)}
           onRemove={async () => {
-            if (window.confirm(`Remove ${selectedPlanting.seedName} from calendar?`)) {
+            if (window.confirm(`Remove ${selectedPlanting.varietyName || selectedPlanting.seedName} from calendar?`)) {
               await deletePhotos(selectedPlanting.photos ?? []);
               removePlanting(selectedPlanting.id);
               setSelectedPlantingId(null);
@@ -289,7 +290,12 @@ function TimelineView({ plantings, onSelectPlanting }: TimelineViewProps) {
         >
           <div className="flex items-center gap-3 mb-3">
             <div className={clsx('w-3 h-3 rounded-full flex-shrink-0', planting.color)} />
-            <span className="font-semibold text-gray-900 text-sm">{planting.seedName}</span>
+            <div>
+              <span className="font-semibold text-gray-900 text-sm">{planting.varietyName || planting.seedName}</span>
+              {planting.varietyName && (
+                <span className="text-xs text-gray-400 ml-1.5">({planting.seedName})</span>
+              )}
+            </div>
             {planting.bedLocation && (
               <span className="text-xs text-gray-400">📍 {planting.bedLocation}</span>
             )}
@@ -377,7 +383,10 @@ function PlantingDetailPanel({ planting, onClose, onRemove }: PlantingDetailPane
           <div className="flex items-center gap-3">
             <div className={clsx('w-8 h-8 rounded-xl flex-shrink-0', planting.color)} />
             <div>
-              <h3 className="font-bold text-gray-900">{planting.seedName}</h3>
+              <h3 className="font-bold text-gray-900">{planting.varietyName || planting.seedName}</h3>
+              {planting.varietyName && (
+                <p className="text-xs text-gray-400">{planting.seedName}</p>
+              )}
               {planting.bedLocation && (
                 <p className="text-xs text-gray-500">📍 {planting.bedLocation}</p>
               )}

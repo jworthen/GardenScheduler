@@ -198,11 +198,14 @@ export default function Dashboard() {
                     <div className={clsx('w-3 h-3 rounded-full flex-shrink-0', planting.color)} />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {planting.seedName}
+                        {planting.varietyName || planting.seedName}
                         {planting.successionIndex !== undefined && (
                           <span className="text-gray-400 ml-1 text-xs">#{planting.successionIndex + 1}</span>
                         )}
                       </p>
+                      {planting.varietyName && (
+                        <p className="text-xs text-gray-400 truncate">{planting.seedName}</p>
+                      )}
                       <p className="text-xs text-gray-500">
                         {planting.transplantDate
                           ? `Transplant: ${formatDisplayDateShort(planting.transplantDate)}`

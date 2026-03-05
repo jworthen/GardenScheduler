@@ -79,6 +79,7 @@ interface GardenStore extends GardenStoreData {
     notes?: string;
     bedLocation?: string;
     year?: number;
+    varietyName?: string;
   }) => PlantingEntry;
   addSuccessionPlanting: (basePlantingId: string, intervalDays: number) => void;
   updatePlanting: (id: string, updates: Partial<PlantingEntry>) => void;
@@ -185,6 +186,7 @@ export const useGardenStore = create<GardenStore>()(
           id: generateId(),
           seedId,
           seedName: seed.commonName,
+          ...(options.varietyName ? { varietyName: options.varietyName } : {}),
           botanicalName: seed.botanicalName,
           category: seed.category,
           color: seed.color,

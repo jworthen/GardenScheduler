@@ -17,7 +17,7 @@ interface StartPlantingsModalProps {
   plan: CellPlan;
   allSeeds: Seed[];
   inventory: InventoryItem[];
-  addPlanting: (seedId: string, seed: Seed, options?: { quantity?: number; bedLocation?: string; year?: number }) => void;
+  addPlanting: (seedId: string, seed: Seed, options?: { quantity?: number; bedLocation?: string; year?: number; varietyName?: string }) => void;
   onClose: () => void;
 }
 
@@ -86,6 +86,7 @@ function StartPlantingsModal({ plan, allSeeds, inventory, addPlanting, onClose }
         quantity: group.count,
         bedLocation: bedLocation.trim() || undefined,
         year,
+        varietyName: group.varietyName !== seed.commonName ? group.varietyName : undefined,
       });
     });
     onClose();
@@ -233,6 +234,7 @@ export default function SeedCellPlanner() {
     () => cellPlans[0]?.id ?? null
   );
   const [activeSeed, setActiveSeed] = useState<SeedOption | null>(null);
+  const [dbVarietyLabel, setDbVarietyLabel] = useState('');
   const [isErasing, setIsErasing] = useState(false);
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [showStartPlantings, setShowStartPlantings] = useState(false);
@@ -307,9 +309,12 @@ export default function SeedCellPlanner() {
       if (isErasing) {
         delete newCells[key];
       } else if (activeSeed) {
+        const effectiveLabel = (!activeSeed.itemId && dbVarietyLabel.trim())
+          ? dbVarietyLabel.trim()
+          : activeSeed.varietyName;
         newCells[key] = {
           seedId: activeSeed.seedId,
-          varietyName: activeSeed.varietyName,
+          varietyName: effectiveLabel,
           category: activeSeed.category,
         };
       } else {
@@ -318,7 +323,7 @@ export default function SeedCellPlanner() {
 
       updateCellPlan(activePlan.id, { cells: newCells, updatedAt: new Date().toISOString() });
     },
-    [activePlan, activeSeed, isErasing, updateCellPlan]
+    [activePlan, activeSeed, dbVarietyLabel, isErasing, updateCellPlan]
   );
 
   const clearCell = useCallback(
@@ -376,8 +381,10 @@ export default function SeedCellPlanner() {
   const selectSeed = (opt: SeedOption) => {
     if (activeSeed?.seedId === opt.seedId) {
       setActiveSeed(null);
+      setDbVarietyLabel('');
     } else {
       setActiveSeed(opt);
+      setDbVarietyLabel('');
       setIsErasing(false);
     }
   };
@@ -385,6 +392,7 @@ export default function SeedCellPlanner() {
   const toggleEraser = () => {
     setIsErasing((e) => !e);
     setActiveSeed(null);
+    setDbVarietyLabel('');
   };
 
   return (
@@ -530,7 +538,7 @@ export default function SeedCellPlanner() {
                 {isErasing
                   ? 'Eraser active — click or drag cells to clear them. Right-click also clears.'
                   : activeSeed
-                  ? `Painting "${activeSeed.varietyName}" — click or drag cells. Right-click to clear.`
+                  ? `Painting "${(!activeSeed.itemId && dbVarietyLabel.trim()) ? dbVarietyLabel.trim() : activeSeed.varietyName}" — click or drag cells. Right-click to clear.`
                   : 'Select a seed or the eraser from the stash panel, then click cells to fill them.'}
               </div>
 
@@ -660,20 +668,30 @@ export default function SeedCellPlanner() {
             </button>
 
             {activeSeed && (
-              <div
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium text-gray-800"
-                style={{
-                  backgroundColor: CATEGORY_BG[activeSeed.category],
-                  borderLeft: `3px solid ${CATEGORY_ACCENT[activeSeed.category]}`,
-                }}
-              >
-                <span className="flex-1 truncate">✏️ {activeSeed.varietyName}</span>
-                <button
-                  onClick={() => setActiveSeed(null)}
-                  className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+              <div>
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium text-gray-800"
+                  style={{
+                    backgroundColor: CATEGORY_BG[activeSeed.category],
+                    borderLeft: `3px solid ${CATEGORY_ACCENT[activeSeed.category]}`,
+                  }}
                 >
-                  <X size={11} />
-                </button>
+                  <span className="flex-1 truncate">✏️ {activeSeed.varietyName}</span>
+                  <button
+                    onClick={() => { setActiveSeed(null); setDbVarietyLabel(''); }}
+                    className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+                {!activeSeed.itemId && (
+                  <input
+                    className="mt-1.5 w-full text-xs border border-stone-200 rounded px-2 py-1.5 focus:outline-none focus:border-garden-400"
+                    placeholder="Variety label (optional)"
+                    value={dbVarietyLabel}
+                    onChange={(e) => setDbVarietyLabel(e.target.value)}
+                  />
+                )}
               </div>
             )}
           </div>
