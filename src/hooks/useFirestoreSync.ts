@@ -87,6 +87,7 @@ export function useFirestoreSync() {
               inventory: safeMergeArray(data.inventory, local.inventory),
               journalEntries: safeMergeArray(data.journalEntries, local.journalEntries),
               customPlants: safeMergeArray(data.customPlants, local.customPlants),
+              beds: safeMergeArray(data.beds, local.beds),
             } as Parameters<typeof hydrate>[0]);
           }
           // If localWriteTime > firestoreSavedAt, the local (persisted) state is
@@ -126,10 +127,10 @@ export function useFirestoreSync() {
         if (totalItems === 0) return;
       }
 
-      const { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans } = state;
+      const { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, beds } = state;
       const savedAt = new Date().toISOString();
       const docRef = doc(db, 'users', user!.uid, 'data', 'gardenData');
-      setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, savedAt });
+      setDoc(docRef, { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, beds, savedAt });
     }
 
     const syncToFirestore = debounce(writeNow, 1500);

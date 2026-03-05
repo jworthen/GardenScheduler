@@ -9,6 +9,7 @@ import {
   Seed,
   PlantCategory,
   CellPlan,
+  GardenBed,
 } from '../types';
 import {
   calculatePlantingDates,
@@ -50,6 +51,7 @@ export interface GardenStoreData {
   journalEntries: JournalEntry[];
   customPlants: Seed[];
   cellPlans: CellPlan[];
+  beds: GardenBed[];
 }
 
 interface GardenStore extends GardenStoreData {
@@ -61,6 +63,7 @@ interface GardenStore extends GardenStoreData {
   journalEntries: JournalEntry[];
   customPlants: Seed[];
   cellPlans: CellPlan[];
+  beds: GardenBed[];
   // Community seeds (shared, loaded from Firestore, not persisted per-user)
   communitySeeds: Seed[];
   setCommunitySeeds: (seeds: Seed[]) => void;
@@ -107,6 +110,11 @@ interface GardenStore extends GardenStoreData {
   updateCellPlan: (id: string, updates: Partial<CellPlan>) => void;
   removeCellPlan: (id: string) => void;
 
+  // Garden beds
+  addBed: (bed: Omit<GardenBed, 'id' | 'createdAt'>) => void;
+  updateBed: (id: string, updates: Partial<GardenBed>) => void;
+  removeBed: (id: string) => void;
+
   // Helpers
   getAllSeeds: () => Seed[];
   getSeedById: (id: string) => Seed | undefined;
@@ -124,6 +132,7 @@ interface GardenStore extends GardenStoreData {
     journalEntries: JournalEntry[];
     customPlants: Seed[];
     cellPlans: CellPlan[];
+    beds: GardenBed[];
   }>) => void;
   reset: () => void;
 }
@@ -138,6 +147,7 @@ export const useGardenStore = create<GardenStore>()(
       journalEntries: [],
       customPlants: [],
       cellPlans: [],
+      beds: [],
       communitySeeds: [],
       setCommunitySeeds: (seeds) => set({ communitySeeds: seeds }),
 
@@ -374,6 +384,19 @@ export const useGardenStore = create<GardenStore>()(
       removeCellPlan: (id) =>
         set((state) => ({ cellPlans: state.cellPlans.filter((p) => p.id !== id) })),
 
+      addBed: (bed) =>
+        set((state) => ({
+          beds: [...state.beds, { ...bed, id: generateId(), createdAt: new Date().toISOString() }],
+        })),
+
+      updateBed: (id, updates) =>
+        set((state) => ({
+          beds: state.beds.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+        })),
+
+      removeBed: (id) =>
+        set((state) => ({ beds: state.beds.filter((b) => b.id !== id) })),
+
       getAllSeeds: () => {
         const { customPlants, communitySeeds } = get();
         return [...defaultSeeds, ...communitySeeds, ...customPlants];
@@ -435,6 +458,7 @@ export const useGardenStore = create<GardenStore>()(
         journalEntries: data.journalEntries ?? state.journalEntries,
         customPlants: data.customPlants ?? state.customPlants,
         cellPlans: data.cellPlans ?? state.cellPlans,
+        beds: data.beds ?? state.beds,
       })),
 
       reset: () => set({
@@ -445,6 +469,7 @@ export const useGardenStore = create<GardenStore>()(
         journalEntries: [],
         customPlants: [],
         cellPlans: [],
+        beds: [],
         communitySeeds: [],
       }),
     }),

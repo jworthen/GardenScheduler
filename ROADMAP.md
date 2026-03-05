@@ -415,6 +415,7 @@ Redesign the seed database from a variety-focused list to a species/crop-type ba
 ---
 
 ## Feature 16: Garden Bed Manager
+`[~]` **Partially complete.**
 **No dependencies — enriches most other features.**
 
 Make "bed location" a real entity rather than a free-text field. Named, dimensioned beds unlock per-bed planting history, companion checks, and eventually a visual layout.
@@ -425,9 +426,11 @@ Make "bed location" a real entity rather than a free-text field. Named, dimensio
 3. The calendar and dashboard can filter by bed; per-bed history builds over seasons
 
 ### Scope
-- [ ] Bed model: id, name, width, length, notes, indoor flag (for seed-starting areas)
-- [ ] Bed manager UI (settings page or dedicated section): create, edit, reorder, delete beds
-- [ ] Planting form: "Bed Location" becomes a dropdown with an inline "add new bed" option
+- [x] Bed model: id, name, width, length, notes, indoor flag (for seed-starting areas)
+- [x] Bed manager UI in Settings: create, edit, delete beds with inline forms
+- [x] Planting form: "Bed Location" uses datalist autocomplete from named beds (free-text still allowed)
+- [x] Journal form: same datalist autocomplete for bed location
+- [x] Beds synced to Firestore alongside other user data
 - [ ] Calendar / timeline: filter by bed
 - [ ] Dashboard: per-bed planting count for the current season
 - [ ] Optional: per-bed yield history once Feature 2 (Harvest Tracking) ships

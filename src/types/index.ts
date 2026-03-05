@@ -209,6 +209,16 @@ export interface CellPlan {
   updatedAt: string;
 }
 
+export interface GardenBed {
+  id: string;
+  name: string;
+  widthFt?: number;
+  lengthFt?: number;
+  notes?: string;
+  indoor: boolean;
+  createdAt: string;
+}
+
 export type SeedRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export interface SeedRequest {

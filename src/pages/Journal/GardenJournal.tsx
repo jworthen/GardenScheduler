@@ -268,6 +268,7 @@ interface JournalFormModalProps {
 
 function JournalFormModal({ isOpen, entry, onClose, onSave }: JournalFormModalProps) {
   const { user } = useAuth();
+  const { beds } = useGardenStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
 
@@ -367,7 +368,21 @@ function JournalFormModal({ isOpen, entry, onClose, onSave }: JournalFormModalPr
           </div>
           <div>
             <label className="label">Garden Bed / Location</label>
-            <input type="text" className="input" value={form.bedLocation} onChange={(e) => set('bedLocation', e.target.value)} placeholder="e.g. North Bed" />
+            <input
+              type="text"
+              className="input"
+              list="journal-bed-options"
+              value={form.bedLocation}
+              onChange={(e) => set('bedLocation', e.target.value)}
+              placeholder={beds.length > 0 ? 'Select a bed or type a name' : 'e.g. North Bed'}
+            />
+            {beds.length > 0 && (
+              <datalist id="journal-bed-options">
+                {beds.map((b) => (
+                  <option key={b.id} value={b.name} />
+                ))}
+              </datalist>
+            )}
           </div>
         </div>
         <div>

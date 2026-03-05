@@ -12,7 +12,7 @@ interface AddToCalendarModalProps {
 }
 
 export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModalProps) {
-  const { settings, addPlanting } = useGardenStore();
+  const { settings, addPlanting, beds } = useGardenStore();
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [bedLocation, setBedLocation] = useState('');
@@ -134,10 +134,18 @@ export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModal
           <input
             type="text"
             className="input"
-            placeholder="e.g. Raised Bed A, North Garden"
+            list="bed-options"
+            placeholder={beds.length > 0 ? 'Select a bed or type a name' : 'e.g. Raised Bed A, North Garden'}
             value={bedLocation}
             onChange={(e) => setBedLocation(e.target.value)}
           />
+          {beds.length > 0 && (
+            <datalist id="bed-options">
+              {beds.map((b) => (
+                <option key={b.id} value={b.name} />
+              ))}
+            </datalist>
+          )}
         </div>
 
         <div>
