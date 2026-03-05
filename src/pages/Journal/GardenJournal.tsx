@@ -1,11 +1,13 @@
-import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, Edit2, Tag, Calendar, Camera, BookOpen } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { Plus, Search, Trash2, Edit2, Camera, BookOpen, X, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
 import { JournalEntry } from '../../types';
 import PageHeader from '../../components/common/PageHeader';
 import Modal from '../../components/common/Modal';
 import { format, parseISO } from '../../utils/dateCalculations';
+import { useAuth } from '../../contexts/AuthContext';
+import { uploadPhoto, deletePhotos, MAX_PHOTO_BYTES } from '../../lib/photoUpload';
 
 export default function GardenJournal() {
   const { journalEntries, addJournalEntry, updateJournalEntry, removeJournalEntry } = useGardenStore();
@@ -114,8 +116,9 @@ export default function GardenJournal() {
                 entry={entry}
                 onView={setViewEntry}
                 onEdit={setEditEntry}
-                onDelete={() => {
+                onDelete={async () => {
                   if (window.confirm('Delete this journal entry?')) {
+                    await deletePhotos(entry.photos ?? []);
                     removeJournalEntry(entry.id);
                   }
                 }}
@@ -264,6 +267,10 @@ interface JournalFormModalProps {
 }
 
 function JournalFormModal({ isOpen, entry, onClose, onSave }: JournalFormModalProps) {
+  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingCount, setUploadingCount] = useState(0);
+
   const [form, setForm] = useState({
     date: entry?.date || format(new Date(), 'yyyy-MM-dd'),
     title: entry?.title || '',
@@ -274,6 +281,7 @@ function JournalFormModal({ isOpen, entry, onClose, onSave }: JournalFormModalPr
     weather: entry?.weather || '',
     temperatureHigh: entry?.temperatureHigh?.toString() || '',
     temperatureLow: entry?.temperatureLow?.toString() || '',
+    photos: entry?.photos || [] as string[],
   });
 
   const set = (key: string, value: unknown) => setForm((p) => ({ ...p, [key]: value }));
@@ -290,17 +298,31 @@ function JournalFormModal({ isOpen, entry, onClose, onSave }: JournalFormModalPr
     set('tags', form.tags.filter((t) => t !== tag));
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
-        // Store photo as base64
-      };
-      reader.readAsDataURL(file);
-    });
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length || !user) return;
+
+    const oversized = files.filter((f) => f.size > MAX_PHOTO_BYTES);
+    if (oversized.length) {
+      alert(`${oversized.map((f) => f.name).join(', ')} ${oversized.length === 1 ? 'is' : 'are'} too large. Max 10 MB per photo.`);
+      return;
+    }
+
+    setUploadingCount((c) => c + files.length);
+    const urls = await Promise.all(
+      files.map((file) => {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `users/${user.uid}/journal/${Date.now()}_${safeName}`;
+        return uploadPhoto(file, path).finally(() => setUploadingCount((c) => c - 1));
+      }),
+    );
+    setForm((p) => ({ ...p, photos: [...p.photos, ...urls] }));
+  };
+
+  const removePhoto = async (url: string) => {
+    setForm((p) => ({ ...p, photos: p.photos.filter((u) => u !== url) }));
+    await deletePhotos([url]);
   };
 
   const handleSave = () => {
@@ -314,7 +336,7 @@ function JournalFormModal({ isOpen, entry, onClose, onSave }: JournalFormModalPr
       weather: form.weather || undefined,
       temperatureHigh: form.temperatureHigh ? Number(form.temperatureHigh) : undefined,
       temperatureLow: form.temperatureLow ? Number(form.temperatureLow) : undefined,
-      photos: entry?.photos || [],
+      photos: form.photos,
     });
   };
 
@@ -401,6 +423,48 @@ function JournalFormModal({ isOpen, entry, onClose, onSave }: JournalFormModalPr
               ))}
             </div>
           )}
+        </div>
+
+        {/* Photos */}
+        <div>
+          <label className="label">Photos</label>
+          {form.photos.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              {form.photos.map((url) => (
+                <div key={url} className="relative group aspect-square">
+                  <img src={url} alt="" className="w-full h-full object-cover rounded-lg" loading="lazy" />
+                  <button
+                    onClick={() => removePhoto(url)}
+                    className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              {uploadingCount > 0 && Array.from({ length: uploadingCount }).map((_, i) => (
+                <div key={`uploading-${i}`} className="aspect-square rounded-lg bg-stone-100 flex items-center justify-center">
+                  <Loader2 size={20} className="text-gray-400 animate-spin" />
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingCount > 0}
+            className="btn-secondary text-sm disabled:opacity-50"
+          >
+            <Camera size={14} />
+            {uploadingCount > 0 ? `Uploading ${uploadingCount} photo${uploadingCount !== 1 ? 's' : ''}…` : 'Add Photos'}
+          </button>
         </div>
       </div>
     </Modal>

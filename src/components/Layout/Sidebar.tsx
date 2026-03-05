@@ -12,6 +12,7 @@ import {
   LogOut,
   User,
   Grid3X3,
+  Images,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,6 +24,7 @@ const navItems = [
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
   { to: '/inventory', icon: Package, label: 'Seed Inventory' },
   { to: '/journal', icon: BookOpen, label: 'Journal' },
+  { to: '/gallery', icon: Images, label: 'Gallery' },
   { to: '/tools', icon: Wrench, label: 'Tools' },
   { to: '/cell-planner', icon: Grid3X3, label: 'Cell Planner' },
 ];

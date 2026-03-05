@@ -99,6 +99,8 @@ export interface PlantingEntry {
   successionIntervalDays?: number;
   // Task tracking
   completedTasks?: string[];
+  // Photo attachments (Firebase Storage download URLs)
+  photos?: string[];
 }
 
 export interface Task {

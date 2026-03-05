@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar, LayoutList, Trash2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Calendar, LayoutList, Trash2, Camera, X, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
 import { PlantingEntry } from '../../types';
@@ -20,6 +20,8 @@ import {
 } from '../../utils/dateCalculations';
 import PageHeader from '../../components/common/PageHeader';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { uploadPhoto, deletePhotos, MAX_PHOTO_BYTES } from '../../lib/photoUpload';
 
 type CalendarView = 'monthly' | 'timeline';
 
@@ -36,7 +38,9 @@ export default function PlantingCalendar() {
   const { plantings, settings, removePlanting, tasks } = useGardenStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarView>('monthly');
-  const [selectedPlanting, setSelectedPlanting] = useState<PlantingEntry | null>(null);
+  // Store ID only so the detail panel always reflects the latest store state.
+  const [selectedPlantingId, setSelectedPlantingId] = useState<string | null>(null);
+  const selectedPlanting = plantings.find((p) => p.id === selectedPlantingId) ?? null;
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -109,12 +113,12 @@ export default function PlantingCalendar() {
             onPrev={() => setCurrentDate(subMonths(currentDate, 1))}
             onNext={() => setCurrentDate(addMonths(currentDate, 1))}
             eventMap={eventMap}
-            onSelectPlanting={setSelectedPlanting}
+            onSelectPlanting={(p) => setSelectedPlantingId(p.id)}
           />
         ) : (
           <TimelineView
             plantings={plantings}
-            onSelectPlanting={setSelectedPlanting}
+            onSelectPlanting={(p) => setSelectedPlantingId(p.id)}
           />
         )}
       </div>
@@ -123,11 +127,12 @@ export default function PlantingCalendar() {
       {selectedPlanting && (
         <PlantingDetailPanel
           planting={selectedPlanting}
-          onClose={() => setSelectedPlanting(null)}
-          onRemove={() => {
+          onClose={() => setSelectedPlantingId(null)}
+          onRemove={async () => {
             if (window.confirm(`Remove ${selectedPlanting.seedName} from calendar?`)) {
+              await deletePhotos(selectedPlanting.photos ?? []);
               removePlanting(selectedPlanting.id);
-              setSelectedPlanting(null);
+              setSelectedPlantingId(null);
             }
           }}
         />
@@ -322,8 +327,38 @@ interface PlantingDetailPanelProps {
 }
 
 function PlantingDetailPanel({ planting, onClose, onRemove }: PlantingDetailPanelProps) {
-  const { addSuccessionPlanting } = useGardenStore();
+  const { addSuccessionPlanting, updatePlanting } = useGardenStore();
+  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [successionDays, setSuccessionDays] = useState(14);
+  const [uploadingCount, setUploadingCount] = useState(0);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length || !user) return;
+
+    const oversized = files.filter((f) => f.size > MAX_PHOTO_BYTES);
+    if (oversized.length) {
+      alert(`${oversized.map((f) => f.name).join(', ')} ${oversized.length === 1 ? 'is' : 'are'} too large. Max 10 MB per photo.`);
+      return;
+    }
+
+    setUploadingCount((c) => c + files.length);
+    const urls = await Promise.all(
+      files.map((file) => {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `users/${user.uid}/plantings/${planting.id}/${Date.now()}_${safeName}`;
+        return uploadPhoto(file, path).finally(() => setUploadingCount((c) => c - 1));
+      }),
+    );
+    updatePlanting(planting.id, { photos: [...(planting.photos ?? []), ...urls] });
+  };
+
+  const removePhoto = async (url: string) => {
+    updatePlanting(planting.id, { photos: (planting.photos ?? []).filter((u) => u !== url) });
+    await deletePhotos([url]);
+  };
 
   const rows = [
     { label: '🌱 Start Indoors', date: planting.indoorStartDate },
@@ -408,6 +443,50 @@ function PlantingDetailPanel({ planting, onClose, onRemove }: PlantingDetailPane
             </button>
           </div>
         )}
+
+        {/* Photos */}
+        <div className="mb-5">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Photos</h4>
+          {(planting.photos?.length ?? 0) > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              {planting.photos!.map((url) => (
+                <div key={url} className="relative group aspect-square">
+                  <img src={url} alt="" className="w-full h-full object-cover rounded-lg" loading="lazy" />
+                  <button
+                    onClick={() => removePhoto(url)}
+                    className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              {uploadingCount > 0 && Array.from({ length: uploadingCount }).map((_, i) => (
+                <div key={`uploading-${i}`} className="aspect-square rounded-lg bg-stone-100 flex items-center justify-center">
+                  <Loader2 size={20} className="text-gray-400 animate-spin" />
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingCount > 0}
+            className="btn-secondary text-sm w-full justify-center disabled:opacity-50"
+          >
+            <Camera size={14} />
+            {uploadingCount > 0
+              ? `Uploading ${uploadingCount} photo${uploadingCount !== 1 ? 's' : ''}…`
+              : 'Add Photos'}
+          </button>
+        </div>
 
         {/* Remove button */}
         <button
