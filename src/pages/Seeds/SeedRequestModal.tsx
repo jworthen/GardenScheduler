@@ -35,7 +35,7 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
   const handleSubmit = async () => {
     if (!user) return;
     if (!commonName.trim()) {
-      setError('Please enter a variety name.');
+      setError('Please enter the crop type name.');
       return;
     }
 
@@ -44,7 +44,7 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
       (s) => s.commonName.toLowerCase() === commonName.trim().toLowerCase(),
     );
     if (existing) {
-      setError(`"${existing.commonName}" already exists in the database.`);
+      setError(`"${existing.commonName}" is already in the database. If you need a different variety, type your variety name when adding it to the calendar.`);
       return;
     }
 
@@ -81,7 +81,7 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Request a Variety"
+      title="Request a Missing Crop Type"
       size="sm"
       footer={
         <>
@@ -89,14 +89,15 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
             Cancel
           </button>
           <button onClick={handleSubmit} className="btn-primary" disabled={submitting}>
-            {submitting ? 'Submitting…' : 'Submit Request'}
+            {submitting ? 'Submitting…' : 'Submit Crop Request'}
           </button>
         </>
       }
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
-          Can't find a plant in the database? Submit a request and we'll review it for addition.
+          Can't find a crop <em>type</em> in the database (e.g. Salsify, Ground Cherry)?
+          Submit a request and we'll add it. For a specific variety like "Cherokee Purple Tomato," just pick <strong>Tomato</strong> from the database and enter your variety name when adding it to the calendar.
         </p>
 
         <div>
@@ -115,7 +116,7 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
         </div>
 
         <div>
-          <label className="label">Variety Name *</label>
+          <label className="label">Crop Type Name *</label>
           <input
             type="text"
             className={`input ${error && !commonName.trim() ? 'border-red-400' : ''}`}
@@ -124,7 +125,7 @@ export default function SeedRequestModal({ isOpen, onClose, onSuccess }: SeedReq
               setCommonName(e.target.value);
               setError('');
             }}
-            placeholder="e.g. Mortgage Lifter Tomato"
+            placeholder="e.g. Salsify, Ground Cherry, Luffa"
           />
         </div>
 

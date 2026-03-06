@@ -89,6 +89,7 @@ export interface PlantingEntry {
   firstHarvestDate?: string;
   firstBloomDate?: string;
   // User overrides
+  daysToMaturityOverride?: number;
   customDates?: {
     indoorStartDate?: string;
     transplantDate?: string;

@@ -3,7 +3,7 @@ import Modal from '../../components/common/Modal';
 import { Seed } from '../../types';
 import { useGardenStore } from '../../store/useStore';
 import { calculatePlantingDates, formatDisplayDate, parseMMDD } from '../../utils/dateCalculations';
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar, ChevronRight, Plus } from 'lucide-react';
 import clsx from 'clsx';
 
 interface AddToCalendarModalProps {
@@ -13,26 +13,31 @@ interface AddToCalendarModalProps {
 
 export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModalProps) {
   const { settings, addPlanting, beds } = useGardenStore();
+
+  // Step state
+  const [step, setStep] = useState<1 | 2>(1);
+
+  // Step 1
   const [varietyName, setVarietyName] = useState('');
+
+  // Step 2
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [bedLocation, setBedLocation] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
+  const [daysToMaturityOverride, setDaysToMaturityOverride] = useState('');
   const [added, setAdded] = useState(false);
 
   if (!seed) return null;
 
   const frostDate = parseMMDD(settings.location.lastSpringFrost, year);
-  const dates = calculatePlantingDates(seed, frostDate, year);
 
-  const handleAdd = () => {
-    addPlanting(seed.id, seed, { quantity, notes, bedLocation, year, varietyName: varietyName.trim() || undefined });
-    setAdded(true);
-    setTimeout(() => {
-      onClose();
-      setAdded(false);
-    }, 1500);
-  };
+  const effectiveDTM =
+    daysToMaturityOverride !== '' ? Number(daysToMaturityOverride) : undefined;
+  const seedForDates = effectiveDTM != null
+    ? { ...seed, daysToMaturity: effectiveDTM }
+    : seed;
+  const dates = calculatePlantingDates(seedForDates, frostDate, year);
 
   const dateRows = [
     { label: '🌱 Start Indoors', date: dates.indoorStartDate, show: !!dates.indoorStartDate },
@@ -46,24 +51,102 @@ export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModal
 
   const currentYear = new Date().getFullYear();
 
+  const handleAdd = () => {
+    addPlanting(seed.id, seed, {
+      quantity,
+      notes,
+      bedLocation,
+      year,
+      varietyName: varietyName.trim() || undefined,
+      daysToMaturityOverride: effectiveDTM,
+    });
+    setAdded(true);
+    setTimeout(() => {
+      onClose();
+      setAdded(false);
+    }, 1500);
+  };
+
+  const handleClose = () => {
+    setStep(1);
+    setVarietyName('');
+    setQuantity(1);
+    setNotes('');
+    setBedLocation('');
+    setDaysToMaturityOverride('');
+    setAdded(false);
+    onClose();
+  };
+
+  // ── Step 1 ────────────────────────────────────────────────────────────────
+  if (step === 1) {
+    return (
+      <Modal
+        isOpen={!!seed}
+        onClose={handleClose}
+        title={seed.commonName}
+        size="sm"
+        footer={
+          <>
+            <button onClick={handleClose} className="btn-secondary">
+              Cancel
+            </button>
+            <button
+              onClick={() => setStep(2)}
+              className="btn-primary"
+            >
+              Next <ChevronRight size={16} />
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-5 py-2">
+          <div className="text-center">
+            <p className="text-3xl mb-2">{seed.icon ?? '🌱'}</p>
+            <p className="text-sm text-gray-500">
+              What variety of <strong>{seed.commonName}</strong> are you growing?
+            </p>
+          </div>
+
+          <div>
+            <input
+              type="text"
+              className="input text-base py-3"
+              placeholder={`e.g. ${seed.category === 'vegetable' ? 'Cherokee Purple, Mortgage Lifter' : seed.category === 'herb' ? 'Genovese, Thai, Purple' : 'Early Wonder, Fordhook Giant'}`}
+              value={varietyName}
+              onChange={(e) => setVarietyName(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') setStep(2); }}
+            />
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Optional — skip if you don't have a specific variety.
+            </p>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  // ── Step 2 ────────────────────────────────────────────────────────────────
   return (
     <Modal
       isOpen={!!seed}
-      onClose={onClose}
-      title={`Add to Calendar: ${seed.commonName}`}
+      onClose={handleClose}
+      title={
+        varietyName.trim()
+          ? `${varietyName.trim()} (${seed.commonName})`
+          : `Add to Calendar: ${seed.commonName}`
+      }
       size="md"
       footer={
         <>
-          <button onClick={onClose} className="btn-secondary">
-            Cancel
+          <button onClick={() => setStep(1)} className="btn-secondary">
+            ← Back
           </button>
           <button
             onClick={handleAdd}
             disabled={added}
-            className={clsx(
-              'btn-primary',
-              added && 'bg-green-500 hover:bg-green-500'
-            )}
+            className={clsx('btn-primary', added && 'bg-green-500 hover:bg-green-500')}
           >
             {added ? (
               <>✓ Added!</>
@@ -104,21 +187,6 @@ export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModal
           </p>
         </div>
 
-        {/* Variety Name */}
-        <div>
-          <label className="label">Variety Name (optional)</label>
-          <input
-            type="text"
-            className="input"
-            placeholder={`e.g. Sungold, Brandywine, Early Girl`}
-            value={varietyName}
-            onChange={(e) => setVarietyName(e.target.value)}
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            The specific variety of {seed.commonName} you're growing.
-          </p>
-        </div>
-
         {/* Options */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -144,6 +212,25 @@ export default function AddToCalendarModal({ seed, onClose }: AddToCalendarModal
             />
           </div>
         </div>
+
+        {/* Days to maturity override */}
+        {seed.daysToMaturity != null && (
+          <div>
+            <label className="label">Days to Maturity (optional override)</label>
+            <input
+              type="number"
+              className="input"
+              min={1}
+              max={365}
+              placeholder={`Default: ${seed.daysToMaturity} days`}
+              value={daysToMaturityOverride}
+              onChange={(e) => setDaysToMaturityOverride(e.target.value)}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Override for a variety with different maturity than the crop-type default.
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="label">Bed / Garden Location (optional)</label>

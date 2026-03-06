@@ -80,6 +80,7 @@ interface GardenStore extends GardenStoreData {
     bedLocation?: string;
     year?: number;
     varietyName?: string;
+    daysToMaturityOverride?: number;
   }) => PlantingEntry;
   addSuccessionPlanting: (basePlantingId: string, intervalDays: number) => void;
   updatePlanting: (id: string, updates: Partial<PlantingEntry>) => void;
@@ -180,13 +181,17 @@ export const useGardenStore = create<GardenStore>()(
         const { settings } = get();
         const year = options.year || new Date().getFullYear();
         const frostDate = parseMMDD(settings.location.lastSpringFrost, year);
-        const dates = calculatePlantingDates(seed, frostDate, year);
+        const seedForDates = options.daysToMaturityOverride != null
+          ? { ...seed, daysToMaturity: options.daysToMaturityOverride }
+          : seed;
+        const dates = calculatePlantingDates(seedForDates, frostDate, year);
 
         const planting: PlantingEntry = {
           id: generateId(),
           seedId,
           seedName: seed.commonName,
           ...(options.varietyName ? { varietyName: options.varietyName } : {}),
+          ...(options.daysToMaturityOverride != null ? { daysToMaturityOverride: options.daysToMaturityOverride } : {}),
           botanicalName: seed.botanicalName,
           category: seed.category,
           color: seed.color,

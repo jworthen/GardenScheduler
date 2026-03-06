@@ -494,8 +494,8 @@ export default function AdminSeedRequests() {
   return (
     <div>
       <PageHeader
-        title="Seed Request Queue"
-        subtitle={`${pendingCount} pending review`}
+        title="Crop Type Request Queue"
+        subtitle={`${pendingCount} pending review · missing crop types only`}
         icon="🌿"
       />
 

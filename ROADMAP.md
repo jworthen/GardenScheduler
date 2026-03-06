@@ -115,6 +115,32 @@ Three-panel layout: plans list (left) | grid (center) | seed stash (right).
 
 ---
 
+## Feature 20: Drag-and-Drop Cell Swap in the Cell Planner
+**Requires: Feature 4 (Cell Planner). No other dependencies.**
+
+Let users rearrange already-filled cells by dragging one cell onto another to swap their contents — without having to erase and repaint.
+
+### How it works
+1. While the Eraser tool is **not** active, the user drags a filled cell onto any other cell
+2. If the target cell is also filled, the two cells swap their seed/variety assignments
+3. If the target cell is empty, the dragged cell's contents move to it and the source becomes empty
+4. Drag handles are implied by a subtle grab cursor on hover; no separate drag mode toggle needed
+
+### Scope
+- [ ] HTML5 drag-and-drop on grid cells (dragstart / dragover / drop)
+- [ ] Swap filled ↔ filled: exchange `CellPlanCell` data between two cell keys in the plan
+- [ ] Move filled → empty: cut from source, paste to target
+- [ ] Auto-save plan after each drag operation (same as paint/erase)
+- [ ] Visual affordance: drag-over cell gets a highlighted border to show it will receive the drop
+- [ ] Eraser-active state disables drag-and-drop to avoid conflicting gestures
+- [ ] Print view unaffected
+
+### Notes
+- Drag-and-drop uses the browser's native HTML5 API — no extra library needed
+- Touch support (mobile) requires a separate pointer-events approach if needed; ship desktop first
+
+---
+
 ## Feature 5: Companion Planting Recommendations
 **No dependencies — enriches the existing seed database.**
 **Inspired by: GrowVeg (evidence-based only), Planter (real-time visual alerts), SmartGardener.**
@@ -389,7 +415,7 @@ Users bring their own variety name and attach it to a species record. The workfl
 ---
 
 ## Feature 15: Seed Database Redesign — Species-Level Model
-`[~]` **Mostly complete.**
+`[x]` **Complete.**
 
 Redesign the seed database from a variety-focused list to a species/crop-type backbone where agronomic data lives, and let users supply their own variety names. See the Design Note section for full rationale.
 
@@ -409,10 +435,10 @@ Redesign the seed database from a variety-focused list to a species/crop-type ba
 - [x] Task labels (`generateTasksForPlanting`) use `varietyName` when present
 - [x] Cell planner: DB-picked seeds show a "Variety label" text input in the stash panel; that label is painted into cells and passed through to "Start Plantings"
 
-### Remaining
-- [ ] Update "Add Plant" flow to make variety name more prominent — consider a two-step picker (crop type → variety name) rather than a single modal
-- [ ] Optional: allow per-planting override of days-to-maturity (for unusually early or late varieties)
-- [ ] Revise Feature 9 admin queue to handle only missing crop type requests, not variety additions
+### Also built (completing this feature)
+- [x] Two-step "Add to Calendar" picker: step 1 prompts for variety name up front (prominent, focused input); step 2 shows calculated dates + options (year, quantity, bed, notes)
+- [x] Per-planting days-to-maturity override: optional field in step 2 recalculates harvest/bloom dates live; stored on `PlantingEntry` as `daysToMaturityOverride`
+- [x] Revised Feature 9 admin queue: renamed to "Crop Type Request Queue", user-facing modal updated to explain the distinction (missing crop type vs. variety name), duplicate-match error message now explains the variety-name workaround
 
 ### Notes
 - "What Can I Plant" tool, companion planting, and cell planner color coding all key off category/type — unaffected
@@ -532,11 +558,12 @@ Standalone (no accounts needed):
     │       └── Feature 6 remaining scope (harvest log photos)
     ├── Feature 3 (Printable Seed Tags / QR Codes)
     ├── Feature 4 (Seed Cell Planner)  [x]
+    │       └── Feature 20 (Drag-and-Drop Cell Swap)
     ├── Feature 5 (Companion Planting)
     ├── Feature 8 (In-App Feedback)
     ├── Feature 9 (Database Addition Requests)  [~]
-    │       └── Feature 15 (Seed DB Redesign — narrows request scope)  [~]
-    ├── Feature 15 (Seed DB Redesign)  [~]
+    │       └── Feature 15 (Seed DB Redesign — narrows request scope)  [x]
+    ├── Feature 15 (Seed DB Redesign)  [x]
     ├── Feature 16 (Garden Bed Manager)
     ├── Feature 18 (Season Management)
     └── Feature 19 (Pest & Disease Log)
