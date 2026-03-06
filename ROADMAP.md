@@ -166,6 +166,27 @@ Let users attach a target seeding date to a cell plan so the task list reminds t
 
 ---
 
+## Feature 22: Plantings Page with Sidebar Nav
+**No dependencies — standalone page. Pairs well with Feature 3 (Seed Tags) and Feature 2 (Harvest Tracking).**
+
+A dedicated page for viewing and managing all planting records, accessible from the sidebar nav. Currently plantings are only reachable through the calendar view.
+
+### How it works
+1. New sidebar nav link: "Plantings" (or "My Plants")
+2. Full list of all planting records with card layout — variety name, plant type, bed location, sow/transplant dates, status
+3. Filter/sort by bed, status (sowed, transplanted, harvested), crop type, season
+4. Clicking a card opens the existing planting detail panel (or a dedicated detail page)
+
+### Scope
+- [ ] Add "Plantings" route and page component
+- [ ] Add link to sidebar nav
+- [ ] Planting card component (reusable — can back-fill into Dashboard and Calendar timeline view)
+- [ ] Filter bar: by bed, status, crop type
+- [ ] Sort: by sow date, name, bed
+- [ ] Empty state for new users
+
+---
+
 ## Feature 5: Companion Planting Recommendations
 **No dependencies — enriches the existing seed database.**
 **Inspired by: GrowVeg (evidence-based only), Planter (real-time visual alerts), SmartGardener.**
