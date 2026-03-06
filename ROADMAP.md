@@ -141,6 +141,31 @@ Let users rearrange already-filled cells by dragging one cell onto another to sw
 
 ---
 
+## Feature 21: Cell Planner Seeding Task
+**Requires: Feature 4 (Cell Planner).**
+
+Let users attach a target seeding date to a cell plan so the task list reminds them when it's time to fill the flat.
+
+### How it works
+1. Each cell plan gains an optional "Seeding date" field — a date picker on the plan detail or in the New/Edit Plan dialog
+2. When a seeding date is set, the app creates one task: "Seed [Plan Name] flat" due on that date
+3. The task appears in the task list and dashboard like any other task; completing it marks the flat as seeded
+4. If the seeding date is changed or the plan is deleted, the task updates or is removed accordingly
+
+### Scope
+- [ ] Add optional `seedingDate?: string` field to `CellPlan` type
+- [ ] Date picker for seeding date in the New Plan dialog and in the plan header (edit in place)
+- [ ] On save, create a single `custom` task tied to the plan: "Seed [Plan Name] flat" on `seedingDate`
+- [ ] On plan update (date changed or cleared), remove the old task and create a new one if needed
+- [ ] On plan delete, remove the associated seeding task
+- [ ] Task displays the plan name and optionally the cell count: "Seed Spring Flat 1 (72 cells)"
+
+### Notes
+- One task per plan regardless of how many varieties are in it — the unit of work is filling the whole flat
+- Does not replace or duplicate the individual start-indoors tasks generated from calendar plantings; this is specifically for planning sessions where the user works from the cell planner rather than from individual planting records
+
+---
+
 ## Feature 5: Companion Planting Recommendations
 **No dependencies — enriches the existing seed database.**
 **Inspired by: GrowVeg (evidence-based only), Planter (real-time visual alerts), SmartGardener.**
@@ -558,7 +583,8 @@ Standalone (no accounts needed):
     │       └── Feature 6 remaining scope (harvest log photos)
     ├── Feature 3 (Printable Seed Tags / QR Codes)
     ├── Feature 4 (Seed Cell Planner)  [x]
-    │       └── Feature 20 (Drag-and-Drop Cell Swap)
+    │       ├── Feature 20 (Drag-and-Drop Cell Swap)
+    │       └── Feature 21 (Cell Planner Seeding Task)
     ├── Feature 5 (Companion Planting)
     ├── Feature 8 (In-App Feedback)
     ├── Feature 9 (Database Addition Requests)  [~]
