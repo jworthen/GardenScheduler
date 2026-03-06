@@ -18,6 +18,7 @@ import AdminSeedRequests from './pages/Admin/AdminSeedRequests';
 import SeedCellPlanner from './pages/CellPlanner/SeedCellPlanner';
 import GardenGallery from './pages/Gallery/GardenGallery';
 import GardenBeds from './pages/Beds/GardenBeds';
+import Plantings from './pages/Plantings/Plantings';
 
 function AppRoutes() {
   const onboardingCompleted =
@@ -39,6 +40,7 @@ function AppRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/seeds" element={<SeedDatabase />} />
         <Route path="/calendar" element={<PlantingCalendar />} />
+        <Route path="/plantings" element={<Plantings />} />
         <Route path="/tasks" element={<TaskList />} />
         <Route path="/inventory" element={<SeedInventory />} />
         <Route path="/journal" element={<GardenJournal />} />

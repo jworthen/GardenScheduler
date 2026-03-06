@@ -33,7 +33,7 @@ export default function Dashboard() {
   );
 
   const stats = [
-    { label: 'Plants Scheduled', value: plantings.length, icon: '🌱', href: '/calendar' },
+    { label: 'Plants Scheduled', value: plantings.length, icon: '🌱', href: '/plantings' },
     { label: 'Tasks This Week', value: getUpcomingTasks(7).length, icon: '✅', href: '/tasks' },
     { label: 'Seed Varieties', value: inventory.length, icon: '📦', href: '/inventory' },
     { label: 'Completed Tasks', value: completedTasks.length, icon: '🎯', href: '/tasks' },

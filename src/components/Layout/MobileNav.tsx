@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Sprout,
   Calendar,
+  Flower2,
   CheckSquare,
   BookOpen,
   Package,
@@ -15,6 +16,7 @@ const mobileNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Home', end: true },
   { to: '/seeds', icon: Sprout, label: 'Seeds' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
+  { to: '/plantings', icon: Flower2, label: 'Plants' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
   { to: '/inventory', icon: Package, label: 'Inventory' },
   { to: '/journal', icon: BookOpen, label: 'Journal' },
@@ -25,7 +27,7 @@ const mobileNavItems = [
 export default function MobileNav() {
   return (
     <nav className="mobile-nav md:hidden bg-white border-t border-stone-200 safe-area-inset-bottom">
-      <div className="grid grid-cols-8 py-1">
+      <div className="grid grid-cols-9 py-1">
         {mobileNavItems.map(({ to, icon: Icon, label, end }) => (
           <NavLink
             key={to}

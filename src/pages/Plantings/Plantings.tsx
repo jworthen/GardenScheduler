@@ -1,0 +1,288 @@
+import { useState, useMemo } from 'react';
+import { Plus, Search, X, Flower2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import clsx from 'clsx';
+import { useGardenStore } from '../../store/useStore';
+import { PlantingEntry, PlantCategory } from '../../types';
+import { formatDisplayDateShort } from '../../utils/dateCalculations';
+import { deletePhotos } from '../../lib/photoUpload';
+import PageHeader from '../../components/common/PageHeader';
+import PlantingDetailPanel from '../../components/PlantingDetail/PlantingDetailPanel';
+
+// ===== HELPERS =====
+
+const CATEGORY_LABELS: Record<PlantCategory, string> = {
+  vegetable: 'Vegetable',
+  fruit: 'Fruit',
+  herb: 'Herb',
+  'flower-annual': 'Annual Flower',
+  'flower-perennial': 'Perennial Flower',
+  bulb: 'Bulb',
+  cutting: 'Cutting',
+};
+
+const DATE_PILLS = [
+  { key: 'indoorStartDate', label: '🌱 Start', colorClass: 'bg-green-100 text-green-800' },
+  { key: 'directSowDate', label: '🌾 Sow', colorClass: 'bg-amber-100 text-amber-800' },
+  { key: 'transplantDate', label: '🌿 Plant', colorClass: 'bg-blue-100 text-blue-800' },
+  { key: 'firstHarvestDate', label: '🥕 Harvest', colorClass: 'bg-red-100 text-red-800' },
+  { key: 'firstBloomDate', label: '🌸 Bloom', colorClass: 'bg-pink-100 text-pink-800' },
+] as const;
+
+// ===== PLANTING CARD =====
+
+function PlantingCard({ planting, onClick }: { planting: PlantingEntry; onClick: () => void }) {
+  const displayName = planting.varietyName || planting.seedName;
+  const subName = planting.varietyName ? planting.seedName : null;
+
+  return (
+    <button
+      onClick={onClick}
+      className="card p-4 text-left hover:shadow-md transition-all hover:-translate-y-0.5 w-full"
+    >
+      {/* Header row */}
+      <div className="flex items-start gap-3 mb-3">
+        <div className={clsx('w-3 h-3 rounded-full flex-shrink-0 mt-1', planting.color)} />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{displayName}</p>
+          {subName && <p className="text-xs text-gray-400 truncate">{subName}</p>}
+        </div>
+        {planting.successionIndex !== undefined && (
+          <span className="badge bg-stone-100 text-gray-500 text-xs flex-shrink-0">
+            #{planting.successionIndex + 1}
+          </span>
+        )}
+      </div>
+
+      {/* Meta */}
+      <div className="flex flex-wrap gap-1.5 mb-2.5">
+        {DATE_PILLS.map(({ key, label, colorClass }) => {
+          const date = planting[key as keyof PlantingEntry] as string | undefined;
+          if (!date) return null;
+          return (
+            <span key={key} className={clsx('text-xs px-2 py-0.5 rounded-full font-medium', colorClass)}>
+              {label} {formatDisplayDateShort(date)}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center gap-3 text-xs text-gray-400">
+        <span className="capitalize">{CATEGORY_LABELS[planting.category] ?? planting.category}</span>
+        {planting.bedLocation && (
+          <>
+            <span>·</span>
+            <span className="truncate">📍 {planting.bedLocation}</span>
+          </>
+        )}
+        {planting.quantity > 1 && (
+          <>
+            <span>·</span>
+            <span>{planting.quantity}×</span>
+          </>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ===== PAGE =====
+
+type SortKey = 'name' | 'sowDate' | 'transplantDate';
+
+export default function Plantings() {
+  const { plantings, removePlanting } = useGardenStore();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState<PlantCategory | ''>('');
+  const [filterBed, setFilterBed] = useState('');
+  const [sort, setSort] = useState<SortKey>('sowDate');
+
+  const selectedPlanting = plantings.find((p) => p.id === selectedId) ?? null;
+
+  // Unique bed names for the filter dropdown
+  const beds = useMemo(() => {
+    const names = plantings.map((p) => p.bedLocation).filter(Boolean) as string[];
+    return [...new Set(names)].sort();
+  }, [plantings]);
+
+  // Categories present in this user's plantings
+  const presentCategories = useMemo(() => {
+    return [...new Set(plantings.map((p) => p.category))].sort() as PlantCategory[];
+  }, [plantings]);
+
+  const filtered = useMemo(() => {
+    let list = [...plantings];
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (p) =>
+          (p.varietyName ?? '').toLowerCase().includes(q) ||
+          p.seedName.toLowerCase().includes(q) ||
+          (p.bedLocation ?? '').toLowerCase().includes(q),
+      );
+    }
+
+    if (filterCategory) {
+      list = list.filter((p) => p.category === filterCategory);
+    }
+
+    if (filterBed) {
+      list = list.filter((p) => p.bedLocation === filterBed);
+    }
+
+    list.sort((a, b) => {
+      if (sort === 'name') {
+        return (a.varietyName || a.seedName).localeCompare(b.varietyName || b.seedName);
+      }
+      if (sort === 'sowDate') {
+        const da = a.indoorStartDate ?? a.directSowDate ?? '';
+        const db = b.indoorStartDate ?? b.directSowDate ?? '';
+        return da.localeCompare(db);
+      }
+      if (sort === 'transplantDate') {
+        return (a.transplantDate ?? '').localeCompare(b.transplantDate ?? '');
+      }
+      return 0;
+    });
+
+    return list;
+  }, [plantings, search, filterCategory, filterBed, sort]);
+
+  const hasFilters = search || filterCategory || filterBed;
+
+  return (
+    <div>
+      <PageHeader
+        title="My Plantings"
+        subtitle={`${plantings.length} plant${plantings.length !== 1 ? 's' : ''} scheduled`}
+        icon="🌿"
+        actions={
+          <Link to="/seeds" className="btn-primary text-sm">
+            <Plus size={16} /> Add Plant
+          </Link>
+        }
+      />
+
+      <div className="px-4 sm:px-6 py-4">
+        {plantings.length === 0 ? (
+          <div className="text-center py-24">
+            <Flower2 className="mx-auto mb-3 text-gray-300" size={48} />
+            <p className="text-lg font-medium text-gray-500 mb-1">No plants yet</p>
+            <p className="text-sm text-gray-400 mb-5">Browse the seed database to start scheduling plants</p>
+            <Link to="/seeds" className="btn-primary mx-auto">
+              <Plus size={16} /> Browse Seeds
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* Filter / sort bar */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              {/* Search */}
+              <div className="relative flex-1 min-w-40">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search plants…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="input pl-8 text-sm"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Category filter */}
+              {presentCategories.length > 1 && (
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value as PlantCategory | '')}
+                  className="input text-sm w-auto"
+                >
+                  <option value="">All types</option>
+                  {presentCategories.map((c) => (
+                    <option key={c} value={c}>{CATEGORY_LABELS[c] ?? c}</option>
+                  ))}
+                </select>
+              )}
+
+              {/* Bed filter */}
+              {beds.length > 0 && (
+                <select
+                  value={filterBed}
+                  onChange={(e) => setFilterBed(e.target.value)}
+                  className="input text-sm w-auto"
+                >
+                  <option value="">All beds</option>
+                  {beds.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              )}
+
+              {/* Sort */}
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortKey)}
+                className="input text-sm w-auto"
+              >
+                <option value="sowDate">Sort: Sow date</option>
+                <option value="transplantDate">Sort: Transplant date</option>
+                <option value="name">Sort: Name</option>
+              </select>
+            </div>
+
+            {/* Results count when filtering */}
+            {hasFilters && (
+              <p className="text-sm text-gray-500 mb-3">
+                {filtered.length} of {plantings.length} plants
+                {hasFilters && (
+                  <button
+                    onClick={() => { setSearch(''); setFilterCategory(''); setFilterBed(''); }}
+                    className="ml-2 text-garden-600 hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </p>
+            )}
+
+            {filtered.length === 0 ? (
+              <div className="text-center py-16 text-gray-400">
+                <p className="font-medium">No plants match your filters</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {filtered.map((p) => (
+                  <PlantingCard key={p.id} planting={p} onClick={() => setSelectedId(p.id)} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {selectedPlanting && (
+        <PlantingDetailPanel
+          planting={selectedPlanting}
+          onClose={() => setSelectedId(null)}
+          onRemove={async () => {
+            if (window.confirm(`Remove ${selectedPlanting.varietyName || selectedPlanting.seedName} from calendar?`)) {
+              await deletePhotos(selectedPlanting.photos ?? []);
+              removePlanting(selectedPlanting.id);
+              setSelectedId(null);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
