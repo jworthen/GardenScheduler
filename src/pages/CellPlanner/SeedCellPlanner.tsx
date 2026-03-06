@@ -348,8 +348,15 @@ export default function SeedCellPlanner() {
     (fromKey: string, toKey: string) => {
       if (!activePlan || fromKey === toKey) return;
       const newCells = { ...activePlan.cells };
-      newCells[toKey] = newCells[fromKey];
-      delete newCells[fromKey];
+      const fromCell = newCells[fromKey];
+      const toCell = newCells[toKey];
+      // Swap: put destination content back into source slot (or clear it if empty)
+      if (toCell) {
+        newCells[fromKey] = toCell;
+      } else {
+        delete newCells[fromKey];
+      }
+      newCells[toKey] = fromCell;
       updateCellPlan(activePlan.id, { cells: newCells, updatedAt: new Date().toISOString() });
     },
     [activePlan, updateCellPlan]
