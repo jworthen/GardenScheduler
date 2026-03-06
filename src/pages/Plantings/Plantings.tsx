@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, X, Flower2 } from 'lucide-react';
+import { Plus, Search, X, Flower2, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
@@ -31,27 +31,43 @@ const DATE_PILLS = [
 
 // ===== PLANTING CARD =====
 
-function PlantingCard({ planting, onClick }: { planting: PlantingEntry; onClick: () => void }) {
+function PlantingCard({
+  planting,
+  onClick,
+  onDelete,
+}: {
+  planting: PlantingEntry;
+  onClick: () => void;
+  onDelete: (e: React.MouseEvent) => void;
+}) {
   const displayName = planting.varietyName || planting.seedName;
   const subName = planting.varietyName ? planting.seedName : null;
 
   return (
-    <button
-      onClick={onClick}
-      className="card p-4 text-left hover:shadow-md transition-all hover:-translate-y-0.5 w-full"
-    >
-      {/* Header row */}
-      <div className="flex items-start gap-3 mb-3">
-        <div className={clsx('w-3 h-3 rounded-full flex-shrink-0 mt-1', planting.color)} />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{displayName}</p>
-          {subName && <p className="text-xs text-gray-400 truncate">{subName}</p>}
-        </div>
-        {planting.successionIndex !== undefined && (
-          <span className="badge bg-stone-100 text-gray-500 text-xs flex-shrink-0">
-            #{planting.successionIndex + 1}
-          </span>
-        )}
+    <div className="card p-4 hover:shadow-md transition-all hover:-translate-y-0.5 group relative">
+      {/* Delete button — hover reveal */}
+      <button
+        onClick={onDelete}
+        className="absolute top-2.5 right-2.5 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+        title="Delete planting"
+      >
+        <Trash2 size={14} />
+      </button>
+
+      {/* Clickable body */}
+      <button onClick={onClick} className="text-left w-full">
+        {/* Header row */}
+        <div className="flex items-start gap-3 mb-3 pr-6">
+          <div className={clsx('w-3 h-3 rounded-full flex-shrink-0 mt-1', planting.color)} />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{displayName}</p>
+            {subName && <p className="text-xs text-gray-400 truncate">{subName}</p>}
+          </div>
+          {planting.successionIndex !== undefined && (
+            <span className="badge bg-stone-100 text-gray-500 text-xs flex-shrink-0">
+              #{planting.successionIndex + 1}
+            </span>
+          )}
       </div>
 
       {/* Meta */}
@@ -83,7 +99,8 @@ function PlantingCard({ planting, onClick }: { planting: PlantingEntry; onClick:
           </>
         )}
       </div>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -262,7 +279,20 @@ export default function Plantings() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {filtered.map((p) => (
-                  <PlantingCard key={p.id} planting={p} onClick={() => setSelectedId(p.id)} />
+                  <PlantingCard
+                    key={p.id}
+                    planting={p}
+                    onClick={() => setSelectedId(p.id)}
+                    onDelete={async (e) => {
+                      e.stopPropagation();
+                      const name = p.varietyName || p.seedName;
+                      if (window.confirm(`Delete ${name}? This cannot be undone.`)) {
+                        await deletePhotos(p.photos ?? []);
+                        removePlanting(p.id);
+                        if (selectedId === p.id) setSelectedId(null);
+                      }
+                    }}
+                  />
                 ))}
               </div>
             )}

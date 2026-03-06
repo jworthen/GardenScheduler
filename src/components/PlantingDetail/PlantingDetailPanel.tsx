@@ -195,7 +195,7 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
           className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors w-full justify-center"
         >
           <Trash2 size={14} />
-          Remove from Calendar
+          Delete Planting
         </button>
       </div>
 
