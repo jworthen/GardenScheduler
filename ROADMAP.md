@@ -77,10 +77,13 @@ Generate print-ready tags for each plant in your garden. Each tag includes the v
 - Optional: days to maturity, spacing reminder, custom note
 
 ### Scope
-- [ ] Tag generator: select plantings → generate tag sheet
-- [ ] QR code generation (client-side, no external service required)
-- [ ] Multiple tag sizes / layouts: standard stake tag (1×4"), round pot label, seed packet label
-- [ ] Print stylesheet: clean layout, no UI chrome, cuts cleanly on a grid
+- [x] Tag generator: "Print Seed Tag" button in planting detail panel
+- [x] QR code generation (client-side, react-qr-code — SVG, no external service)
+- [x] Deep-link support: /calendar?p={plantingId} opens the detail panel (QR scan target)
+- [x] Standard stake tag (1×4") — first pass
+- [ ] Round pot label layout
+- [ ] Seed packet label layout
+- [x] Print stylesheet: body.printing-seed-tag hides all UI chrome, shows only the tag at physical 1×4" dimensions
 - [ ] Offline-safe QR option: encode key data directly in the QR payload rather than a URL, so tags work without an internet connection
 - [ ] Optional: custom logo or garden name in the tag header
 

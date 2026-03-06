@@ -83,6 +83,78 @@
   }
 }
 
+/* Seed stake tag (1" × 4" portrait) */
+.seed-tag-stake {
+  width: 1in;
+  min-height: 4in;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.15in 0.1in;
+  font-family: 'Inter', system-ui, sans-serif;
+  box-sizing: border-box;
+  gap: 0.1in;
+}
+
+.seed-tag-stake__name {
+  font-size: 10pt;
+  font-weight: 700;
+  text-align: center;
+  color: #1c1917;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.seed-tag-stake__subname {
+  font-size: 7pt;
+  color: #78716c;
+  text-align: center;
+  word-break: break-word;
+}
+
+.seed-tag-stake__dates {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05in;
+  margin-top: 0.05in;
+}
+
+.seed-tag-stake__date-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 7pt;
+  color: #1c1917;
+  line-height: 1.3;
+}
+
+.seed-tag-stake__date-label {
+  font-size: 6pt;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #78716c;
+}
+
+.seed-tag-stake__qr {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seed-tag-stake__footer {
+  font-size: 6pt;
+  color: #a8a29e;
+  text-align: center;
+  margin-top: 0.05in;
+}
+
+/* Print-only portal root — hidden on screen */
+.seed-tag-print-root {
+  display: none;
+}
+
 /* Print styles */
 @media print {
   .no-print {
@@ -91,5 +163,21 @@
 
   body {
     background: white;
+  }
+
+  /* Seed tag print mode: hide everything except the tag */
+  body.printing-seed-tag > *:not(.seed-tag-print-root) {
+    display: none !important;
+  }
+
+  body.printing-seed-tag .seed-tag-print-root {
+    display: flex !important;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0.25in;
+  }
+
+  body.printing-seed-tag .seed-tag-stake {
+    border: 0.5pt dashed #ccc;
   }
 }

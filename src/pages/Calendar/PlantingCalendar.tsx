@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar, LayoutList, Trash2, Camera, X, Loader2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Calendar, LayoutList, Trash2, Camera, X, Loader2, Tag } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
 import { PlantingEntry } from '../../types';
@@ -19,9 +19,10 @@ import {
   getTaskIcon,
 } from '../../utils/dateCalculations';
 import PageHeader from '../../components/common/PageHeader';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadPhoto, deletePhotos, MAX_PHOTO_BYTES } from '../../lib/photoUpload';
+import SeedTagModal from '../../components/SeedTag/SeedTagModal';
 
 type CalendarView = 'monthly' | 'timeline';
 
@@ -41,6 +42,13 @@ export default function PlantingCalendar() {
   // Store ID only so the detail panel always reflects the latest store state.
   const [selectedPlantingId, setSelectedPlantingId] = useState<string | null>(null);
   const selectedPlanting = plantings.find((p) => p.id === selectedPlantingId) ?? null;
+  const [searchParams] = useSearchParams();
+
+  // Deep-link: /calendar?p={plantingId} opens the detail panel
+  useEffect(() => {
+    const pid = searchParams.get('p');
+    if (pid) setSelectedPlantingId(pid);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -338,6 +346,7 @@ function PlantingDetailPanel({ planting, onClose, onRemove }: PlantingDetailPane
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [successionDays, setSuccessionDays] = useState(14);
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [showTag, setShowTag] = useState(false);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -497,6 +506,15 @@ function PlantingDetailPanel({ planting, onClose, onRemove }: PlantingDetailPane
           </button>
         </div>
 
+        {/* Print Tag */}
+        <button
+          onClick={() => setShowTag(true)}
+          className="btn-secondary text-sm w-full justify-center mb-2"
+        >
+          <Tag size={14} />
+          Print Seed Tag
+        </button>
+
         {/* Remove button */}
         <button
           onClick={onRemove}
@@ -506,6 +524,10 @@ function PlantingDetailPanel({ planting, onClose, onRemove }: PlantingDetailPane
           Remove from Calendar
         </button>
       </div>
+
+      {showTag && (
+        <SeedTagModal planting={planting} onClose={() => setShowTag(false)} />
+      )}
     </div>
   );
 }
