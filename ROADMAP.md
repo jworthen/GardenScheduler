@@ -389,27 +389,34 @@ Users bring their own variety name and attach it to a species record. The workfl
 ---
 
 ## Feature 15: Seed Database Redesign — Species-Level Model
-**No hard dependencies, but should be done before the user base grows large.**
+`[~]` **Mostly complete.**
 
 Redesign the seed database from a variety-focused list to a species/crop-type backbone where agronomic data lives, and let users supply their own variety names. See the Design Note section for full rationale.
 
 ### How it works
-1. The database contains ~100–200 crop type records (e.g. "Tomato — Indeterminate", "Basil — Large Leaf", "Carrot") with fully curated agronomic data: sowing depth, spacing, days to maturity range, frost tolerance, light needs
-2. When adding a planting, the user picks a crop type, then types their variety name freely
-3. Planting date calculations and task generation key off the crop type; the variety name is display-only
-4. Existing planting records migrate cleanly: `seedId` still points to a crop type record; the user's variety name lives in a new `varietyName` field
+1. The database contains crop type records (e.g. "Tomato — Cherry", "Basil", "Carrot") with fully curated agronomic data: sowing depth, spacing, days to maturity range, frost tolerance, light needs
+2. When adding a planting, the user picks a crop type, then optionally types their variety name freely
+3. Planting date calculations and task generation key off the crop type; the variety name is used for display throughout the app
+4. Planting records store both `seedId` (crop type) and `varietyName` (user-supplied)
 
-### Scope
-- [ ] Audit and flatten current seed database to species/crop-type level — remove redundant variety-specific records, keep or split where agronomic data meaningfully differs (e.g. "Tomato — Cherry" vs "Tomato — Beefsteak" have different spacing and days to maturity)
-- [ ] Add `varietyName` free-text field to `PlantingEntry`; update calendar, tags, and journal to display it
-- [ ] Update "Add Plant" flow: step 1 picks a crop type, step 2 is a free-text variety name
-- [ ] Update cell planner seed picker: shows crop types; user labels cells with variety name
+### As built
+- [x] Audit and flatten seed database to crop-type level — removed 36 redundant variety-specific records (17 tomato, 8 pepper, 4 cucumber, 1 extra sweet corn, 6 duplicate cutting flowers); 154 → 118 records
+- [x] Cleaned up ~49 `commonName` values that embedded variety names (e.g. `'Basil (Sweet)'` → `'Basil'`, `'Artichoke, Imperial Star'` → `'Artichoke'`)
+- [x] Added `varietyName?: string` field to `PlantingEntry` type
+- [x] `addPlanting` store action accepts and persists `varietyName`
+- [x] "Add to Calendar" modal: new optional Variety Name input field
+- [x] Calendar (month events, timeline, detail panel), dashboard, tasks: display `varietyName` as primary label with `seedName` shown as context when both are set
+- [x] Task labels (`generateTasksForPlanting`) use `varietyName` when present
+- [x] Cell planner: DB-picked seeds show a "Variety label" text input in the stash panel; that label is painted into cells and passed through to "Start Plantings"
+
+### Remaining
+- [ ] Update "Add Plant" flow to make variety name more prominent — consider a two-step picker (crop type → variety name) rather than a single modal
 - [ ] Optional: allow per-planting override of days-to-maturity (for unusually early or late varieties)
 - [ ] Revise Feature 9 admin queue to handle only missing crop type requests, not variety additions
 
 ### Notes
 - "What Can I Plant" tool, companion planting, and cell planner color coding all key off category/type — unaffected
-- Inventory already uses free-text variety names; the planting flow is the main gap
+- Inventory already uses free-text variety names; the planting flow is now aligned
 - Granularity rule of thumb: split crop types only when agronomic data meaningfully differs (spacing, sowing method, days to maturity range)
 
 ---
@@ -528,8 +535,8 @@ Standalone (no accounts needed):
     ├── Feature 5 (Companion Planting)
     ├── Feature 8 (In-App Feedback)
     ├── Feature 9 (Database Addition Requests)  [~]
-    │       └── Feature 15 (Seed DB Redesign — narrows request scope)
-    ├── Feature 15 (Seed DB Redesign)
+    │       └── Feature 15 (Seed DB Redesign — narrows request scope)  [~]
+    ├── Feature 15 (Seed DB Redesign)  [~]
     ├── Feature 16 (Garden Bed Manager)
     ├── Feature 18 (Season Management)
     └── Feature 19 (Pest & Disease Log)
