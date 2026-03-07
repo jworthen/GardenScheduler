@@ -333,12 +333,65 @@ export const useGardenStore = create<GardenStore>()(
           ],
         })),
 
-      updateInventoryItem: (id, updates) =>
+      updateInventoryItem: (id, updates) => {
         set((state) => ({
           inventory: state.inventory.map((i) =>
             i.id === id ? { ...i, ...updates, updatedAt: new Date().toISOString() } : i
           ),
-        })),
+        }));
+
+        // If the seed database link changed, update any plantings that were
+        // created from this inventory item (seedId === 'inv:<id>') so they
+        // get the real seed's schedule dates and tasks.
+        if ('seedId' in updates && updates.seedId) {
+          const { plantings, settings, getAllSeeds } = get();
+          const invKey = `inv:${id}`;
+          const affectedPlantings = plantings.filter((p) => p.seedId === invKey);
+          if (!affectedPlantings.length) return;
+
+          const seed = getAllSeeds().find((s) => s.id === updates.seedId);
+          if (!seed) return;
+
+          const updatedPlantings: PlantingEntry[] = [];
+          const newTasksByPlanting: Record<string, Task[]> = {};
+
+          for (const planting of affectedPlantings) {
+            const frostDate = parseMMDD(settings.location.lastSpringFrost, planting.year);
+            const dates = calculatePlantingDates(seed, frostDate, planting.year);
+            const updated: PlantingEntry = {
+              ...planting,
+              seedId: seed.id,
+              seedName: seed.commonName,
+              botanicalName: seed.botanicalName,
+              category: seed.category,
+              color: seed.color,
+              indoorStartDate: dates.indoorStartDate ? formatDate(dates.indoorStartDate) : undefined,
+              potUpDate: dates.potUpDate ? formatDate(dates.potUpDate) : undefined,
+              hardeningOffStart: dates.hardeningOffStart ? formatDate(dates.hardeningOffStart) : undefined,
+              transplantDate: dates.transplantDate ? formatDate(dates.transplantDate) : undefined,
+              directSowDate: dates.directSowDate ? formatDate(dates.directSowDate) : undefined,
+              firstHarvestDate: dates.firstHarvestDate ? formatDate(dates.firstHarvestDate) : undefined,
+              firstBloomDate: (['flower-annual', 'flower-perennial', 'bulb', 'cutting'].includes(seed.category) && dates.firstBloomDate)
+                ? formatDate(dates.firstBloomDate)
+                : undefined,
+            };
+            updatedPlantings.push(updated);
+            newTasksByPlanting[planting.id] = generateTasksForPlanting(updated, seed).map((t) => ({
+              ...t,
+              id: generateId(),
+            })) as Task[];
+          }
+
+          const affectedIds = new Set(affectedPlantings.map((p) => p.id));
+          set((state) => ({
+            plantings: state.plantings.map((p) => updatedPlantings.find((u) => u.id === p.id) ?? p),
+            tasks: [
+              ...state.tasks.filter((t) => !affectedIds.has(t.plantingEntryId)),
+              ...Object.values(newTasksByPlanting).flat(),
+            ],
+          }));
+        }
+      },
 
       removeInventoryItem: (id) =>
         set((state) => ({
