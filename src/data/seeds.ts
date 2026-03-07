@@ -1064,7 +1064,7 @@ export const seeds: Seed[] = [
     daysToBloom: 50,
     startIndoors: true,
     directSow: true,
-    indoorStartWeeks: 4,
+    indoorStartWeeks: 8,
     directSowWeeks: -4,
     lightRequirement: 'full-sun',
     spacing: 12,
