@@ -81,6 +81,7 @@ interface GardenStore extends GardenStoreData {
     year?: number;
     varietyName?: string;
     daysToMaturityOverride?: number;
+    source?: 'cell-planner';
   }) => PlantingEntry;
   addSuccessionPlanting: (basePlantingId: string, intervalDays: number) => void;
   updatePlanting: (id: string, updates: Partial<PlantingEntry>) => void;
@@ -205,9 +206,9 @@ export const useGardenStore = create<GardenStore>()(
           potUpDate: dates.potUpDate ? formatDate(dates.potUpDate) : undefined,
           hardeningOffStart: dates.hardeningOffStart ? formatDate(dates.hardeningOffStart) : undefined,
           transplantDate: dates.transplantDate ? formatDate(dates.transplantDate) : undefined,
-          directSowDate: dates.directSowDate ? formatDate(dates.directSowDate) : undefined,
+          directSowDate: (options.source === 'cell-planner' || !dates.directSowDate) ? undefined : formatDate(dates.directSowDate),
           firstHarvestDate: dates.firstHarvestDate ? formatDate(dates.firstHarvestDate) : undefined,
-          firstBloomDate: dates.firstBloomDate ? formatDate(dates.firstBloomDate) : undefined,
+          firstBloomDate: (!['flower-annual', 'flower-perennial', 'bulb', 'cutting'].includes(seed.category) || !dates.firstBloomDate) ? undefined : formatDate(dates.firstBloomDate),
           completedTasks: [],
         };
 

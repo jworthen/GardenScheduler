@@ -17,7 +17,7 @@ interface StartPlantingsModalProps {
   plan: CellPlan;
   allSeeds: Seed[];
   inventory: InventoryItem[];
-  addPlanting: (seedId: string, seed: Seed, options?: { quantity?: number; bedLocation?: string; year?: number; varietyName?: string }) => void;
+  addPlanting: (seedId: string, seed: Seed, options?: { quantity?: number; bedLocation?: string; year?: number; varietyName?: string; source?: 'cell-planner' }) => void;
   onClose: () => void;
 }
 
@@ -87,6 +87,7 @@ function StartPlantingsModal({ plan, allSeeds, inventory, addPlanting, onClose }
         bedLocation: bedLocation.trim() || undefined,
         year,
         varietyName: group.varietyName !== seed.commonName ? group.varietyName : undefined,
+        source: 'cell-planner',
       });
     });
     onClose();
