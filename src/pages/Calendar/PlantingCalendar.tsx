@@ -25,6 +25,14 @@ import PlantingDetailPanel from '../../components/PlantingDetail/PlantingDetailP
 
 type CalendarView = 'monthly' | 'timeline';
 
+const EVENT_TYPE_COLOR: Record<string, string> = {
+  'start-indoors': 'bg-green-500',
+  'direct-sow':    'bg-amber-500',
+  'transplant':    'bg-blue-500',
+  'harvest':       'bg-red-400',
+  'bloom':         'bg-pink-400',
+};
+
 interface DayEvent {
   plantingId: string;
   plantingName: string;
@@ -233,7 +241,7 @@ function MonthView({ currentDate, onPrev, onNext, eventMap, onSelectPlanting }: 
                     }}
                     className={clsx(
                       'w-full text-left px-1 py-0.5 rounded text-xs truncate text-white leading-tight',
-                      event.color
+                      EVENT_TYPE_COLOR[event.type] ?? 'bg-stone-400'
                     )}
                     title={`${event.label}: ${event.plantingName}`}
                   >
