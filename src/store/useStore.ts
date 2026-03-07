@@ -260,10 +260,47 @@ export const useGardenStore = create<GardenStore>()(
         }));
       },
 
-      updatePlanting: (id, updates) =>
+      updatePlanting: (id, updates) => {
         set((state) => ({
           plantings: state.plantings.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-        })),
+        }));
+
+        // If any date field changed, resync task due dates while preserving
+        // the completed state of tasks that were already marked done.
+        const dateFields: (keyof PlantingEntry)[] = [
+          'indoorStartDate', 'potUpDate', 'hardeningOffStart', 'transplantDate',
+          'directSowDate', 'firstHarvestDate', 'firstBloomDate',
+        ];
+        if (dateFields.some((f) => f in updates)) {
+          const { plantings, tasks, getAllSeeds } = get();
+          const planting = plantings.find((p) => p.id === id);
+          if (!planting) return;
+          const seed = getAllSeeds().find((s) => s.id === planting.seedId);
+          if (!seed) return;
+
+          const existingTasks = tasks.filter((t) => t.plantingEntryId === id);
+          const completedByType = new Map(
+            existingTasks.filter((t) => t.completed).map((t) => [t.type, t])
+          );
+
+          const newTasks = generateTasksForPlanting(planting, seed).map((t) => {
+            const prev = completedByType.get(t.type);
+            return {
+              ...t,
+              id: prev ? prev.id : generateId(),
+              completed: prev ? true : false,
+              ...(prev?.completedDate ? { completedDate: prev.completedDate } : {}),
+            };
+          });
+
+          set((state) => ({
+            tasks: [
+              ...state.tasks.filter((t) => t.plantingEntryId !== id),
+              ...newTasks,
+            ],
+          }));
+        }
+      },
 
       removePlanting: (id) =>
         set((state) => ({
