@@ -109,7 +109,7 @@ function PlantingCard({
 type SortKey = 'name' | 'sowDate' | 'transplantDate';
 
 export default function Plantings() {
-  const { plantings, removePlanting } = useGardenStore();
+  const { plantings, removePlanting, clearAllPlantings } = useGardenStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<PlantCategory | ''>('');
@@ -177,9 +177,26 @@ export default function Plantings() {
         subtitle={`${plantings.length} plant${plantings.length !== 1 ? 's' : ''} scheduled`}
         icon="🌿"
         actions={
-          <Link to="/seeds" className="btn-primary text-sm">
-            <Plus size={16} /> Add Plant
-          </Link>
+          <div className="flex items-center gap-2">
+            {plantings.length > 0 && (
+              <button
+                onClick={async () => {
+                  if (!window.confirm(`Delete all ${plantings.length} planting${plantings.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+                  const allPhotos = plantings.flatMap((p) => p.photos ?? []);
+                  if (allPhotos.length) await deletePhotos(allPhotos);
+                  clearAllPlantings();
+                  setSelectedId(null);
+                }}
+                className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-red-200 transition-colors"
+              >
+                <Trash2 size={15} />
+                Delete All
+              </button>
+            )}
+            <Link to="/seeds" className="btn-primary text-sm">
+              <Plus size={16} /> Add Plant
+            </Link>
+          </div>
         }
       />
 

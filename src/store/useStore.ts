@@ -85,6 +85,7 @@ interface GardenStore extends GardenStoreData {
   addSuccessionPlanting: (basePlantingId: string, intervalDays: number) => void;
   updatePlanting: (id: string, updates: Partial<PlantingEntry>) => void;
   removePlanting: (id: string) => void;
+  clearAllPlantings: () => void;
 
   // Task actions
   regenerateTasksForPlanting: (plantingId: string) => void;
@@ -268,6 +269,9 @@ export const useGardenStore = create<GardenStore>()(
           plantings: state.plantings.filter((p) => p.id !== id && p.parentPlantingId !== id),
           tasks: state.tasks.filter((t) => t.plantingEntryId !== id),
         })),
+
+      clearAllPlantings: () =>
+        set({ plantings: [], tasks: [] }),
 
       regenerateTasksForPlanting: (plantingId) => {
         const { plantings, tasks } = get();
