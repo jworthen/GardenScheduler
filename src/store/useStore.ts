@@ -202,7 +202,7 @@ export const useGardenStore = create<GardenStore>()(
           bedLocation: options.bedLocation,
           year,
           createdAt: new Date().toISOString(),
-          indoorStartDate: dates.indoorStartDate ? formatDate(dates.indoorStartDate) : undefined,
+          indoorStartDate: (options.source === 'cell-planner' || !dates.indoorStartDate) ? undefined : formatDate(dates.indoorStartDate),
           potUpDate: dates.potUpDate ? formatDate(dates.potUpDate) : undefined,
           hardeningOffStart: dates.hardeningOffStart ? formatDate(dates.hardeningOffStart) : undefined,
           transplantDate: dates.transplantDate ? formatDate(dates.transplantDate) : undefined,
@@ -212,13 +212,9 @@ export const useGardenStore = create<GardenStore>()(
           completedTasks: [],
         };
 
-        const now = new Date().toISOString();
         const newTasks = generateTasksForPlanting(planting, seed).map((t) => ({
           ...t,
           id: generateId(),
-          ...(options.source === 'cell-planner' && (t.type === 'start-indoors' || t.type === 'direct-sow')
-            ? { completed: true, completedDate: now }
-            : {}),
         }));
 
         set((state) => ({
