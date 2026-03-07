@@ -3,7 +3,6 @@ import { Trash2, Camera, X, Loader2, Tag } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
 import { PlantingEntry } from '../../types';
-import { formatDisplayDateShort } from '../../utils/dateCalculations';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadPhoto, deletePhotos, MAX_PHOTO_BYTES } from '../../lib/photoUpload';
 import SeedTagModal from '../SeedTag/SeedTagModal';
@@ -49,15 +48,24 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
     await deletePhotos([url]);
   };
 
-  const rows = [
-    { label: '🌱 Start Indoors', date: planting.indoorStartDate },
-    { label: '🪴 Pot Up', date: planting.potUpDate },
-    { label: '🌤️ Begin Hardening Off', date: planting.hardeningOffStart },
-    { label: '🌿 Transplant Outdoors', date: planting.transplantDate },
-    { label: '🌾 Direct Sow', date: planting.directSowDate },
-    { label: '🥕 First Harvest', date: planting.firstHarvestDate },
-    { label: '🌸 First Bloom', date: planting.firstBloomDate },
-  ].filter((r) => r.date);
+  type DateField = keyof Pick<PlantingEntry,
+    'indoorStartDate' | 'potUpDate' | 'hardeningOffStart' | 'transplantDate' |
+    'directSowDate' | 'firstHarvestDate' | 'firstBloomDate'
+  >;
+
+  const rows: { label: string; field: DateField }[] = [
+    { label: '🌱 Start Indoors',      field: 'indoorStartDate' },
+    { label: '🪴 Pot Up',             field: 'potUpDate' },
+    { label: '🌤️ Begin Hardening Off', field: 'hardeningOffStart' },
+    { label: '🌿 Transplant Outdoors', field: 'transplantDate' },
+    { label: '🌾 Direct Sow',         field: 'directSowDate' },
+    { label: '🥕 First Harvest',      field: 'firstHarvestDate' },
+    { label: '🌸 First Bloom',        field: 'firstBloomDate' },
+  ];
+
+  const handleDateChange = (field: DateField, value: string) => {
+    updatePlanting(planting.id, { [field]: value || undefined });
+  };
 
   return (
     <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-2xl z-40 overflow-y-auto animate-slide-in">
@@ -84,16 +92,27 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
         </div>
 
         {/* Dates */}
-        <div className="space-y-2 mb-5">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Key Dates</h4>
-          {rows.map(({ label, date }) => (
-            <div key={label} className="flex items-center justify-between py-1.5 border-b border-stone-100">
-              <span className="text-sm text-gray-600">{label}</span>
-              <span className="text-sm font-medium text-gray-900">
-                {date ? formatDisplayDateShort(date) : '—'}
-              </span>
-            </div>
-          ))}
+        <div className="space-y-0 mb-5">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Key Dates</h4>
+          {rows.map(({ label, field }) => {
+            const date = planting[field];
+            return (
+              <div key={field} className="flex items-center justify-between py-1.5 border-b border-stone-100 group">
+                <span className="text-sm text-gray-600 flex-shrink-0 mr-2">{label}</span>
+                <input
+                  type="date"
+                  value={date ?? ''}
+                  onChange={(e) => handleDateChange(field, e.target.value)}
+                  className={clsx(
+                    'text-sm font-medium bg-transparent border-0 rounded px-1.5 py-0.5 text-right',
+                    'focus:outline-none focus:ring-1 focus:ring-garden-500 focus:bg-white focus:text-left',
+                    'hover:bg-stone-50 cursor-pointer transition-colors',
+                    date ? 'text-gray-900' : 'text-gray-300',
+                  )}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Details */}
