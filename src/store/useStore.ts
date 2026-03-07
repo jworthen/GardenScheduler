@@ -212,9 +212,13 @@ export const useGardenStore = create<GardenStore>()(
           completedTasks: [],
         };
 
+        const now = new Date().toISOString();
         const newTasks = generateTasksForPlanting(planting, seed).map((t) => ({
           ...t,
           id: generateId(),
+          ...(options.source === 'cell-planner' && (t.type === 'start-indoors' || t.type === 'direct-sow')
+            ? { completed: true, completedDate: now }
+            : {}),
         }));
 
         set((state) => ({
