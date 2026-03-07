@@ -17,6 +17,7 @@ import {
   differenceInDays,
   isBefore,
   isAfter,
+  startOfDay,
 } from 'date-fns';
 import { Seed, PlantingDates, PlantingEntry, Task, TaskType } from '../types';
 
@@ -121,6 +122,22 @@ export function calculatePlantingDates(
         dates.firstBloomDate = addDays(directSowDate, germDays + seed.daysToBloom);
       }
     }
+  }
+
+  // If the first action date is already in the past, shift the whole schedule
+  // forward so it starts today, preserving all relative spacing.
+  const today = startOfDay(new Date());
+  const firstAction = dates.indoorStartDate ?? dates.directSowDate;
+  if (firstAction && isBefore(firstAction, today)) {
+    const shift = differenceInDays(today, firstAction);
+    const shiftDate = (d: Date | undefined) => (d ? addDays(d, shift) : undefined);
+    dates.indoorStartDate = shiftDate(dates.indoorStartDate);
+    dates.potUpDate = shiftDate(dates.potUpDate);
+    dates.hardeningOffStart = shiftDate(dates.hardeningOffStart);
+    dates.transplantDate = shiftDate(dates.transplantDate);
+    dates.directSowDate = shiftDate(dates.directSowDate);
+    dates.firstHarvestDate = shiftDate(dates.firstHarvestDate);
+    dates.firstBloomDate = shiftDate(dates.firstBloomDate);
   }
 
   return dates;
