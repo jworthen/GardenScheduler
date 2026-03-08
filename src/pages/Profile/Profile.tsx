@@ -6,6 +6,7 @@ import { lookupFrostDatesByZip, zoneData } from '../../data/frostDates';
 import PageHeader from '../../components/common/PageHeader';
 import {
   generateShareToken,
+  updateSharePage,
   getReservationsForOwner,
   updateReservationStatus,
 } from '../../lib/plantShare';
@@ -50,10 +51,24 @@ export default function Profile() {
     }
   }, [shareablePlantings.length, loadReservations]);
 
-  const handleGetShareLink = () => {
+  const handleGetShareLink = async () => {
+    if (!user) return;
     const token = generateShareToken();
     setShareToken(token);
     updateSettings({ profile: { ...settings.profile, shareToken: token } });
+    const shareable = shareablePlantings.map((p) => ({
+      plantingId: p.id,
+      seedName: p.seedName,
+      ...(p.varietyName && { varietyName: p.varietyName }),
+      category: p.category,
+      color: p.color,
+      availableToShare: p.availableToShare!,
+      reservedCount: 0,
+      ...(p.transplantDate && { transplantDate: p.transplantDate }),
+      ...(p.firstBloomDate && { firstBloomDate: p.firstBloomDate }),
+      ...(p.firstHarvestDate && { firstHarvestDate: p.firstHarvestDate }),
+    }));
+    await updateSharePage(token, user.uid, settings.profile?.gardenName ?? 'My Garden', shareable);
   };
 
   const handleCopyLink = async () => {
