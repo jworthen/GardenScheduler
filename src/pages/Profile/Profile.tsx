@@ -55,6 +55,10 @@ export default function Profile() {
       const token = await getOrCreateShareToken(user.uid);
       setShareToken(token);
       updateSettings({ profile: { ...settings.profile, shareToken: token } });
+      const url = `${window.location.origin}/share/${token}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } finally {
       setTokenLoading(false);
     }
