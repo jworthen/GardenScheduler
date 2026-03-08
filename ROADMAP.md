@@ -57,6 +57,7 @@ Close the loop on the growing cycle by letting users record what they actually g
 ---
 
 ## Feature 3: Printable Seed Tags with QR Codes
+`[~]` **Partially complete.**
 **No dependencies — standalone feature. Works even better with Feature 1 (accounts) for persistent tag URLs.**
 **Inspired by: MyFolia (QR code plant tags).**
 
@@ -81,9 +82,9 @@ Generate print-ready tags for each plant in your garden. Each tag includes the v
 - [x] QR code generation (client-side, react-qr-code — SVG, no external service)
 - [x] Deep-link support: /calendar?p={plantingId} opens the detail panel (QR scan target)
 - [x] Standard stake tag (1×4") — first pass
+- [x] Print stylesheet: body.printing-seed-tag hides all UI chrome, shows only the tag at physical 1×4" dimensions
 - [ ] Round pot label layout
 - [ ] Seed packet label layout
-- [x] Print stylesheet: body.printing-seed-tag hides all UI chrome, shows only the tag at physical 1×4" dimensions
 - [ ] Offline-safe QR option: encode key data directly in the QR payload rather than a URL, so tags work without an internet connection
 - [ ] Optional: custom logo or garden name in the tag header
 
@@ -169,44 +170,47 @@ Let users attach a target seeding date to a cell plan so the task list reminds t
 
 ---
 
-## Feature 22: Plantings Page with Sidebar Nav
-**No dependencies — standalone page. Pairs well with Feature 3 (Seed Tags) and Feature 2 (Harvest Tracking).**
+## Feature 22: Plantings Page
+`[x]` **Complete.**
 
-A dedicated page for viewing and managing all planting records, accessible from the sidebar nav. Currently plantings are only reachable through the calendar view.
+### As built
+Dedicated sidebar page for viewing and managing all planting records.
 
-### How it works
-1. New sidebar nav link: "Plantings" (or "My Plants")
-2. Full list of all planting records with card layout — variety name, plant type, bed location, sow/transplant dates, status
-3. Filter/sort by bed, status (sowed, transplanted, harvested), crop type, season
-4. Clicking a card opens the existing planting detail panel (or a dedicated detail page)
+- Card grid layout — variety name, crop type, bed location, sow/transplant/harvest/bloom date pills
+- Search by name or bed; filter by crop category and bed location; sort by sow date, name, or transplant date
+- Sort preference persisted across navigation (localStorage)
+- Clicking a card opens the planting detail panel (dates, notes, succession planting, photos, seed tag)
+- Delete button per card (hover reveal); bulk "Delete All" with confirmation
+- Empty state for new users with link to add seeds
 
 ### Scope
-- [ ] Add "Plantings" route and page component
-- [ ] Add link to sidebar nav
-- [ ] Planting card component (reusable — can back-fill into Dashboard and Calendar timeline view)
-- [ ] Filter bar: by bed, status, crop type
-- [ ] Sort: by sow date, name, bed
-- [ ] Empty state for new users
+- [x] Plantings route and page component
+- [x] Sidebar nav link
+- [x] Planting card component
+- [x] Search, filter by bed, filter by category
+- [x] Sort by sow date, name, transplant date (persisted)
+- [x] Empty state for new users
 
 ---
 
 ## Feature 5: Companion Planting Recommendations
+`[~]` **Partially complete.**
 **No dependencies — enriches the existing seed database.**
 **Inspired by: GrowVeg (evidence-based only), Planter (real-time visual alerts), SmartGardener.**
 
 Show which plants help each other and which should be kept apart, based on scientific evidence rather than gardening folklore.
 
 ### How it works
-1. Each seed in the database gains a list of beneficial companions and plants to avoid
-2. When a user views a seed or a planting, companions are shown with a brief rationale
+1. Each seed in the database has a list of beneficial companions and plants to avoid
+2. When a user views a seed, companions are shown with a brief rationale
 3. In future, companions could be highlighted visually when placing plants near each other in the Seed Cell Planner
 
 ### Design principle — evidence-based only
 Follow GrowVeg's approach: only list companions supported by published research. Don't list "bad companions" unless the evidence is solid — much of the bad-companion folklore (e.g. onions stunting beans) has never been scientifically confirmed.
 
 ### Scope
-- [ ] Companion data fields on seed records: `companions: string[]`, `avoid: string[]`, `companionNotes: string`
-- [ ] Companion planting section on seed detail pages
+- [x] Companion data fields on seed records: `companionPlants: string[]`, `avoidPlanting: string[]`
+- [x] Companion planting section on seed detail pages
 - [ ] "Good neighbors" badge on the planting calendar when a companion is already planted nearby (same bed)
 - [ ] Optional: filter seed database by "companions well with [X]"
 
@@ -256,7 +260,7 @@ Allow a single user to manage more than one named garden (e.g. "Front Yard Beds"
 - [ ] Migrate existing single-garden data to the new multi-garden Firestore structure
 
 ### Notes
-- Free tier could cap at 1–2 gardens; paid tier gets unlimited (ties into Feature 11)
+- Free tier could cap at 1–2 gardens; paid tier gets unlimited (ties into Feature 14)
 
 ---
 
@@ -289,7 +293,7 @@ Let users send feature suggestions, bug reports, or general feedback without lea
 ## Feature 9: User-Requested Database Additions
 `[~]` **Mostly complete — reduced in scope given seed DB redesign direction.**
 
-Allow users to request that a new crop type be added to the database. Under the redesigned model (see Feature 15), the database covers species/crop types rather than individual varieties — so the request pipeline is narrower and lower-volume than originally planned.
+Allow users to request that a new crop type be added to the database. Under the redesigned model (Feature 15), the database covers species/crop types rather than individual varieties — so the request pipeline is narrower and lower-volume than originally planned.
 
 ### How it works
 1. User submits a request for a missing crop type
@@ -310,9 +314,6 @@ Allow users to request that a new crop type be added to the database. Under the 
 - [x] Rate limiting: 5 requests per user per day
 - [ ] Email/notification to user when their request is approved or rejected
 - [ ] Ability for users to submit corrections to existing crop entries (e.g. wrong spacing) — routed to the same admin review queue
-
-### Note
-If Feature 15 ships, variety-level requests go away entirely; the queue becomes strictly for missing crop types, which will be infrequent. The admin UI and rate limiting remain useful regardless.
 
 ---
 
@@ -431,68 +432,32 @@ Monetize the app for users outside your personal network.
 
 ---
 
-## Design Note: Seed Database Model
-
-**The current approach isn't scalable.** The built-in seed database tries to ship a curated list of specific varieties, but no fixed dataset can cover the range of what real gardeners actually grow. Some observations:
-
-- There are tens of thousands of tomato varieties alone — any static list will always feel thin or arbitrary
-- The request pipeline (Feature 9) was designed to patch this gap, but it doesn't scale operationally
-- Users already type in their own variety names when adding to inventory — they don't need us to have their exact variety pre-loaded
-
-**Direction to explore: high-level species as the backbone, user-supplied variety names**
-
-Keep the database at the *species / crop type* level (Tomato, Basil, French Filet Bean, etc.) rather than the variety level. This is where the useful agronomic data lives anyway — frost tolerance, days to maturity ranges, spacing, sowing depth, light needs. Specific variety differences (days to maturity variance, flavor, color) are refinements, not the core.
-
-Users bring their own variety name and attach it to a species record. The workflow would look like:
-
-1. User picks a crop type from the database (e.g. "Tomato — Indeterminate")
-2. They enter their own variety name (e.g. "Cherokee Purple") — free text, no lookup required
-3. Planting dates and care tasks are calculated from the species-level data
-4. Their variety name shows up on their calendar, tags, and journal — everything feels personal
-
-**What this changes:**
-- Feature 9 (database addition requests) becomes less important — you're no longer crowdsourcing variety records, just fixing or adding crop types
-- The seed database becomes a set of maybe 100–200 species/type entries, all fully curated and trusted, instead of an ever-growing list of varieties
-- Companion planting (Feature 5) and cell planner color coding stay the same — those key off category/species, not variety
-- Inventory already supports free-text variety names — the rest of the app needs to catch up
-
-**Open questions:**
-- How granular should "species" be? (e.g. is "Tomato — Cherry" a separate record from "Tomato — Beefsteak", or just one "Tomato" record with a size note?)
-- Should users be able to override the species-level agronomic data per-variety? (e.g. a particularly early variety with shorter days to maturity)
-- Does this change how Feature 10 (Seed Swap) works? Users swapping specific varieties still need to describe what they have — probably just free text.
-
----
-
 ## Feature 15: Seed Database Redesign — Species-Level Model
 `[x]` **Complete.**
 
-Redesign the seed database from a variety-focused list to a species/crop-type backbone where agronomic data lives, and let users supply their own variety names. See the Design Note section for full rationale.
+Redesign the seed database from a variety-focused list to a species/crop-type backbone where agronomic data lives, and let users supply their own variety names.
+
+### Rationale
+The original database tried to ship a curated list of specific varieties, but no fixed dataset can cover the range of what real gardeners grow. The database is now at the *species / crop type* level (Tomato — Indeterminate, Basil, French Filet Bean, etc.) — this is where the useful agronomic data lives: frost tolerance, days to maturity ranges, spacing, sowing depth, light needs. Users supply their own variety name and attach it to a species record.
 
 ### How it works
-1. The database contains crop type records (e.g. "Tomato — Cherry", "Basil", "Carrot") with fully curated agronomic data: sowing depth, spacing, days to maturity range, frost tolerance, light needs
+1. The database contains crop type records with fully curated agronomic data
 2. When adding a planting, the user picks a crop type, then optionally types their variety name freely
-3. Planting date calculations and task generation key off the crop type; the variety name is used for display throughout the app
+3. Planting date calculations and task generation key off the crop type; the variety name is used for display throughout
 4. Planting records store both `seedId` (crop type) and `varietyName` (user-supplied)
 
 ### As built
-- [x] Audit and flatten seed database to crop-type level — removed 36 redundant variety-specific records (17 tomato, 8 pepper, 4 cucumber, 1 extra sweet corn, 6 duplicate cutting flowers); 154 → 118 records
-- [x] Cleaned up ~49 `commonName` values that embedded variety names (e.g. `'Basil (Sweet)'` → `'Basil'`, `'Artichoke, Imperial Star'` → `'Artichoke'`)
+- [x] Audit and flatten seed database to crop-type level — removed 36 redundant variety-specific records; 154 → 118 records
+- [x] Cleaned up ~49 `commonName` values that embedded variety names
 - [x] Added `varietyName?: string` field to `PlantingEntry` type
 - [x] `addPlanting` store action accepts and persists `varietyName`
 - [x] "Add to Calendar" modal: new optional Variety Name input field
-- [x] Calendar (month events, timeline, detail panel), dashboard, tasks: display `varietyName` as primary label with `seedName` shown as context when both are set
+- [x] Calendar, dashboard, tasks: display `varietyName` as primary label with `seedName` shown as context
 - [x] Task labels (`generateTasksForPlanting`) use `varietyName` when present
-- [x] Cell planner: DB-picked seeds show a "Variety label" text input in the stash panel; that label is painted into cells and passed through to "Start Plantings"
-
-### Also built (completing this feature)
-- [x] Two-step "Add to Calendar" picker: step 1 prompts for variety name up front (prominent, focused input); step 2 shows calculated dates + options (year, quantity, bed, notes)
-- [x] Per-planting days-to-maturity override: optional field in step 2 recalculates harvest/bloom dates live; stored on `PlantingEntry` as `daysToMaturityOverride`
-- [x] Revised Feature 9 admin queue: renamed to "Crop Type Request Queue", user-facing modal updated to explain the distinction (missing crop type vs. variety name), duplicate-match error message now explains the variety-name workaround
-
-### Notes
-- "What Can I Plant" tool, companion planting, and cell planner color coding all key off category/type — unaffected
-- Inventory already uses free-text variety names; the planting flow is now aligned
-- Granularity rule of thumb: split crop types only when agronomic data meaningfully differs (spacing, sowing method, days to maturity range)
+- [x] Cell planner: DB-picked seeds show a "Variety label" text input; label passes through to "Start Plantings"
+- [x] Two-step "Add to Calendar" picker: step 1 prompts for variety name; step 2 shows calculated dates + options
+- [x] Per-planting days-to-maturity override: recalculates harvest/bloom dates live; stored as `daysToMaturityOverride`
+- [x] Revised Feature 9 admin queue: renamed to "Crop Type Request Queue"; duplicate-match error explains the variety-name workaround
 
 ---
 
@@ -605,16 +570,17 @@ Feature 1 (Accounts & Hosting)  [x]
 Standalone (no accounts needed):
     ├── Feature 2 (Harvest Tracking)
     │       └── Feature 6 remaining scope (harvest log photos)
-    ├── Feature 3 (Printable Seed Tags / QR Codes)
+    ├── Feature 3 (Printable Seed Tags / QR Codes)  [~]
     ├── Feature 4 (Seed Cell Planner)  [x]
     │       ├── Feature 20 (Drag-and-Drop Cell Swap)
     │       └── Feature 21 (Cell Planner Seeding Task)
-    ├── Feature 5 (Companion Planting)
+    ├── Feature 5 (Companion Planting)  [~]
     ├── Feature 8 (In-App Feedback)
     ├── Feature 9 (Database Addition Requests)  [~]
     │       └── Feature 15 (Seed DB Redesign — narrows request scope)  [x]
     ├── Feature 15 (Seed DB Redesign)  [x]
-    ├── Feature 16 (Garden Bed Manager)
+    ├── Feature 16 (Garden Bed Manager)  [~]
     ├── Feature 18 (Season Management)
-    └── Feature 19 (Pest & Disease Log)
+    ├── Feature 19 (Pest & Disease Log)
+    └── Feature 22 (Plantings Page)  [x]
 ```
