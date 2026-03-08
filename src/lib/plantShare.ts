@@ -31,11 +31,14 @@ function generateShareToken(): string {
 
 // ── User profile (shareToken) ───────────────────────────────────────────────
 
+const SHARE_TOKEN_RE = /^[a-z2-9]{12}$/;
+
 export async function getOrCreateShareToken(userId: string): Promise<string> {
   const ref = doc(db, 'userProfiles', userId);
   const snap = await getDoc(ref);
-  if (snap.exists() && snap.data().shareToken) {
-    return snap.data().shareToken as string;
+  const existing = snap.exists() ? (snap.data().shareToken as string | undefined) : undefined;
+  if (existing && SHARE_TOKEN_RE.test(existing)) {
+    return existing;
   }
   const token = generateShareToken();
   await setDoc(ref, { shareToken: token }, { merge: true });
