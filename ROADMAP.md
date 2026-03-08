@@ -344,6 +344,7 @@ A community swap marketplace where users list seeds they have and seeds they wan
 ---
 
 ## Feature 11: Plant Share with Friends
+`[x]` **Complete.**
 **Requires: Feature 1.**
 
 Mark seedlings as available to share and send a link — anyone with the link can browse your share list and claim plants without needing an account. Coordination stays entirely in the app.
@@ -351,15 +352,15 @@ Mark seedlings as available to share and send a link — anyone with the link ca
 ### How it works
 1. Grower marks individual plantings as "available to share" and sets a quantity (e.g. "8 Cherokee Purple tomato starts available")
 2. The app generates a unique shareable link tied to their profile — one link, always up to date
-3. Anyone with the link can open the public share page, see what's available, and submit a reservation with just their name (contact and note optional)
-4. The public page offers a "Track your own garden — sign up free" prompt but never requires it
+3. Anyone with the link can open the public share page, see what's available, and submit a reservation with their name and email — no account needed
+4. The public page offers a "Try Last Frost free" sign-up prompt but never requires it
 5. The grower sees incoming reservations in-app, confirms or cancels them, and the available count updates in real time
 
 ### Data model
 - `PlantingEntry.availableToShare?: number` — quantity offered; undefined or 0 = not sharing
 - `shareToken: string` on user profile — a random token generated once, used as the public URL key
 - **`sharePages/{token}`** (Firestore) — public-readable document: grower display name + snapshot of their currently shared plantings; updated whenever sharing settings change
-- **`shareReservations/{id}`** (Firestore) — public-writable, owner-readable: `{ ownerUid, shareToken, plantingId, plantingName, quantity, claimerName, claimerContact?, claimerNote?, status: 'pending'|'confirmed'|'cancelled', createdAt }`
+- **`shareReservations/{id}`** (Firestore) — public-writable, owner-readable: `{ ownerUid, shareToken, plantingId, plantingName, quantity, claimerName, claimerEmail, claimerNote?, status: 'pending'|'confirmed'|'cancelled', createdAt }`
 
 ### Firestore security rules
 - `sharePages`: public read, owner write only
@@ -368,24 +369,26 @@ Mark seedlings as available to share and send a link — anyone with the link ca
 ### Scope
 
 **Grower — in-app:**
-- [ ] Add `availableToShare?: number` to `PlantingEntry` type
-- [ ] "Available to share" quantity input on the planting detail panel — shows sharing badge on the planting card when set
-- [ ] Generate `shareToken` on first use (nanoid, stored on user profile in Firestore)
-- [ ] "Copy share link" button on the profile page or a dedicated Share page
-- [ ] In-app reservations view: list of reservations grouped by planting, with claimant name, contact, quantity, and status
-- [ ] Confirm / cancel reservation actions (updates `status` in Firestore)
-- [ ] Available quantity display: total offered minus confirmed reservations
+- [x] Add `availableToShare?: number` to `PlantingEntry` type
+- [x] "Available to share" quantity input on the planting detail panel — shows sharing badge on the planting card when set
+- [x] Generate `shareToken` on first use (nanoid, stored on user profile in Firestore)
+- [x] "Copy share link" button on the profile page
+- [x] In-app reservations view: list of reservations with claimant name, email, quantity, and status
+- [x] Confirm / cancel reservation actions (updates `status` in Firestore)
 
 **Public share page — `/share/:token`:**
-- [ ] Public route outside the auth wrapper — no sign-in required
-- [ ] Reads `sharePages/{token}` — shows grower's name and their shared plantings with quantity still available (total minus confirmed reservations)
-- [ ] Reservation form: claimant name (required), contact email or phone (optional), quantity, optional note
-- [ ] Confirmation screen after submitting — no account needed
-- [ ] Sign-up CTA ("Start planning your own garden — it's free") — prominent but skippable
+- [x] Public route outside the auth wrapper — no sign-in required
+- [x] Reads `sharePages/{token}` — shows grower's name and their shared plantings with quantity still available (total minus confirmed reservations)
+- [x] Plant cards: variety name, crop type, date pills (transplant / harvest / bloom), per-plant quantity stepper capped at available count
+- [x] Responsive grid layout: 1 / 2 / 3 columns at sm / lg breakpoints
+- [x] Plants sorted alphabetically; cards with 0 remaining hidden
+- [x] Reservation form: name (required), email (required), quantity per plant, optional note
+- [x] Confirmation screen after submitting — no account needed
+- [x] Sign-up CTA ("Try Last Frost free") — prominent but skippable
 
 **Backend:**
-- [ ] `sharePages/{token}` document written/updated whenever a planting's `availableToShare` value changes or the user's display name changes
-- [ ] `shareReservations` Firestore security rules (public create, owner read/update)
+- [x] `sharePages/{token}` document written/updated whenever a planting's `availableToShare` value changes or sharing settings change
+- [x] `shareReservations` Firestore security rules (public create, owner read/update)
 
 ### Notes
 - The share link is permanent and always reflects current availability — no need to re-send when plantings change
@@ -593,7 +596,7 @@ Feature 1 (Accounts & Hosting)  [x]
     ├── Feature 7 (Multiple Gardens)
     ├── Feature 10 (Seed Swap)
     │       └── Feature 12 (Serendipity Labels)
-    ├── Feature 11 (Plant Share)
+    ├── Feature 11 (Plant Share)  [x]
     ├── Feature 13 (Community Profiles & Feed)
     ├── Feature 14 (Payments)  ← also depends on 10 & 11 being worth paying for
     └── Feature 17 (Task Notifications)  ← needs email/push infrastructure
