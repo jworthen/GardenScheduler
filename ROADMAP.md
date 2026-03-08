@@ -57,7 +57,7 @@ Close the loop on the growing cycle by letting users record what they actually g
 ---
 
 ## Feature 3: Printable Seed Tags with QR Codes
-`[~]` **Partially complete.**
+`[x]` **Complete.**
 **No dependencies — standalone feature. Works even better with Feature 1 (accounts) for persistent tag URLs.**
 **Inspired by: MyFolia (QR code plant tags).**
 
@@ -83,10 +83,9 @@ Generate print-ready tags for each plant in your garden. Each tag includes the v
 - [x] Deep-link support: /calendar?p={plantingId} opens the detail panel (QR scan target)
 - [x] Standard stake tag (1×4") — first pass
 - [x] Print stylesheet: body.printing-seed-tag hides all UI chrome, shows only the tag at physical 1×4" dimensions
-- [ ] Round pot label layout
-- [ ] Seed packet label layout
-- [ ] Offline-safe QR option: encode key data directly in the QR payload rather than a URL, so tags work without an internet connection
-- [ ] Optional: custom logo or garden name in the tag header
+- [x] Round pot label layout (2.5″ circle with cut-guide border)
+- [x] Seed packet label layout (3.5″ × 2″ landscape, two-column)
+- [x] Offline-safe QR option: encodes plant name, crop type, and key dates as plain text directly in the QR payload — readable on any phone without internet
 
 ### Notes
 - MyFolia's QR tags were one of its most distinctive and beloved features — worth emulating closely
@@ -604,7 +603,7 @@ Feature 1 (Accounts & Hosting)  [x]
 Standalone (no accounts needed):
     ├── Feature 2 (Harvest Tracking)
     │       └── Feature 6 remaining scope (harvest log photos)
-    ├── Feature 3 (Printable Seed Tags / QR Codes)  [~]
+    ├── Feature 3 (Printable Seed Tags / QR Codes)  [x]
     ├── Feature 4 (Seed Cell Planner)  [x]
     │       ├── Feature 20 (Drag-and-Drop Cell Swap)
     │       └── Feature 21 (Cell Planner Seeding Task)
