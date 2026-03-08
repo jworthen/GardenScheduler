@@ -145,7 +145,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <CheckSquare className="text-garden-600" size={18} />
-                <h2 className="font-semibold text-gray-900">Upcoming (14 days)</h2>
+                <h2 className="font-semibold text-gray-900">Upcoming (next 14 days)</h2>
                 <span className="badge bg-garden-100 text-garden-700">{upcomingTasks.length}</span>
               </div>
               <Link to="/tasks" className="text-sm text-garden-600 hover:text-garden-700 font-medium">
