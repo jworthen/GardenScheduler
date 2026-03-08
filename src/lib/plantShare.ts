@@ -24,7 +24,7 @@ import { PlantCategory, ShareReservation } from '../types';
 
 // ── Token generation ────────────────────────────────────────────────────────
 
-function generateShareToken(): string {
+export function generateShareToken(): string {
   const chars = 'abcdefghjkmnpqrstuvwxyz23456789'; // omit confusable chars
   return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }

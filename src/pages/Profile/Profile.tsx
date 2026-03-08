@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { lookupFrostDatesByZip, zoneData } from '../../data/frostDates';
 import PageHeader from '../../components/common/PageHeader';
 import {
-  getOrCreateShareToken,
+  generateShareToken,
   getReservationsForOwner,
   updateReservationStatus,
 } from '../../lib/plantShare';
@@ -24,7 +24,6 @@ export default function Profile() {
   const [shareToken, setShareToken] = useState<string | null>(
     storedToken && /^[a-z2-9]{12}$/.test(storedToken) ? storedToken : null,
   );
-  const [tokenLoading, setTokenLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Reservations
@@ -51,16 +50,10 @@ export default function Profile() {
     }
   }, [shareablePlantings.length, loadReservations]);
 
-  const handleGetShareLink = async () => {
-    if (!user) return;
-    setTokenLoading(true);
-    try {
-      const token = await getOrCreateShareToken(user.uid);
-      setShareToken(token);
-      updateSettings({ profile: { ...settings.profile, shareToken: token } });
-    } finally {
-      setTokenLoading(false);
-    }
+  const handleGetShareLink = () => {
+    const token = generateShareToken();
+    setShareToken(token);
+    updateSettings({ profile: { ...settings.profile, shareToken: token } });
   };
 
   const handleCopyLink = async () => {
@@ -230,11 +223,10 @@ export default function Profile() {
               ) : (
                 <button
                   onClick={handleGetShareLink}
-                  disabled={tokenLoading}
-                  className="btn-primary text-sm disabled:opacity-50"
+                  className="btn-primary text-sm"
                 >
-                  {tokenLoading ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />}
-                  {tokenLoading ? 'Generating…' : 'Get Share Link'}
+                  <Share2 size={15} />
+                  Get Share Link
                 </button>
               )}
 
