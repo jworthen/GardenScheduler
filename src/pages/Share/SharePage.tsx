@@ -178,7 +178,11 @@ export default function SharePage() {
         <h1 className="text-2xl font-bold text-gray-900 mt-2">
           {page.ownerName ? `${page.ownerName}'s Garden` : page.gardenName}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">Plants available to share with the community</p>
+        <p className="text-sm text-gray-500 mt-3 max-w-md mx-auto">
+          {page.ownerName
+            ? `${page.ownerName.split(' ')[0]} has offered to share some of their garden's harvest with the community. Browse what's available below, choose how many you'd like of each, and submit a single request — they'll reach out to arrange pickup.`
+            : `This gardener has offered to share some of their harvest with the community. Browse what's available below, choose how many you'd like of each, and submit a single request — they'll reach out to arrange pickup.`}
+        </p>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
