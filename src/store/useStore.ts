@@ -261,43 +261,46 @@ export const useGardenStore = create<GardenStore>()(
       },
 
       updatePlanting: (id, updates) => {
-        set((state) => ({
-          plantings: state.plantings.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-        }));
-
         // If any date field changed, resync task due dates while preserving
         // the completed state of tasks that were already marked done.
         const dateFields: (keyof PlantingEntry)[] = [
           'indoorStartDate', 'potUpDate', 'hardeningOffStart', 'transplantDate',
           'directSowDate', 'firstHarvestDate', 'firstBloomDate',
         ];
-        if (dateFields.some((f) => f in updates)) {
+        const regenerateTasks = dateFields.some((f) => f in updates);
+
+        if (regenerateTasks) {
           const { plantings, tasks, getAllSeeds } = get();
-          const planting = plantings.find((p) => p.id === id);
-          if (!planting) return;
-          const seed = getAllSeeds().find((s) => s.id === planting.seedId);
+          const existing = plantings.find((p) => p.id === id);
+          if (!existing) return;
+          const seed = getAllSeeds().find((s) => s.id === existing.seedId);
           if (!seed) return;
 
-          const existingTasks = tasks.filter((t) => t.plantingEntryId === id);
+          const updatedPlanting = { ...existing, ...updates } as PlantingEntry;
           const completedByType = new Map(
-            existingTasks.filter((t) => t.completed).map((t) => [t.type, t])
+            tasks.filter((t) => t.plantingEntryId === id && t.completed).map((t) => [t.type, t])
           );
 
-          const newTasks = generateTasksForPlanting(planting, seed).map((t) => {
+          const newTasks = generateTasksForPlanting(updatedPlanting, seed).map((t) => {
             const prev = completedByType.get(t.type);
             return {
               ...t,
               id: prev ? prev.id : generateId(),
-              completed: prev ? true : false,
-              ...(prev?.completedDate ? { completedDate: prev.completedDate } : {}),
+              completed: !!prev,
+              completedDate: prev?.completedDate,
             };
           });
 
           set((state) => ({
+            plantings: state.plantings.map((p) => (p.id === id ? updatedPlanting : p)),
             tasks: [
               ...state.tasks.filter((t) => t.plantingEntryId !== id),
               ...newTasks,
             ],
+          }));
+        } else {
+          set((state) => ({
+            plantings: state.plantings.map((p) => (p.id === id ? { ...p, ...updates } : p)),
           }));
         }
       },

@@ -36,7 +36,6 @@ const EVENT_TYPE_COLOR: Record<string, string> = {
 interface DayEvent {
   plantingId: string;
   plantingName: string;
-  color: string;
   type: string;
   label: string;
   date: string;
@@ -63,19 +62,19 @@ export default function PlantingCalendar() {
   // Build event map: date string -> events
   const eventMap: Record<string, DayEvent[]> = {};
 
-  const addEvent = (date: string | undefined, plantingId: string, name: string, color: string, type: string, label: string) => {
+  const addEvent = (date: string | undefined, plantingId: string, name: string, type: string, label: string) => {
     if (!date) return;
     if (!eventMap[date]) eventMap[date] = [];
-    eventMap[date].push({ plantingId, plantingName: name, color, type, label, date });
+    eventMap[date].push({ plantingId, plantingName: name, type, label, date });
   };
 
   plantings.forEach((p) => {
     const displayName = p.varietyName || p.seedName;
-    if (p.indoorStartDate) addEvent(p.indoorStartDate, p.id, displayName, p.color, 'start-indoors', '🌱 Start');
-    if (p.transplantDate) addEvent(p.transplantDate, p.id, displayName, p.color, 'transplant', '🌿 Transplant');
-    if (p.directSowDate) addEvent(p.directSowDate, p.id, displayName, p.color, 'direct-sow', '🌾 Direct Sow');
-    if (p.firstHarvestDate) addEvent(p.firstHarvestDate, p.id, displayName, p.color, 'harvest', '🥕 Harvest');
-    if (p.firstBloomDate) addEvent(p.firstBloomDate, p.id, displayName, p.color, 'bloom', '🌸 Bloom');
+    if (p.indoorStartDate) addEvent(p.indoorStartDate, p.id, displayName, 'start-indoors', '🌱 Start');
+    if (p.transplantDate) addEvent(p.transplantDate, p.id, displayName, 'transplant', '🌿 Transplant');
+    if (p.directSowDate) addEvent(p.directSowDate, p.id, displayName, 'direct-sow', '🌾 Direct Sow');
+    if (p.firstHarvestDate) addEvent(p.firstHarvestDate, p.id, displayName, 'harvest', '🥕 Harvest');
+    if (p.firstBloomDate) addEvent(p.firstBloomDate, p.id, displayName, 'bloom', '🌸 Bloom');
   });
 
   return (

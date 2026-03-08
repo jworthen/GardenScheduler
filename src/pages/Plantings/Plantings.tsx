@@ -107,6 +107,7 @@ function PlantingCard({
 // ===== PAGE =====
 
 type SortKey = 'name' | 'sowDate' | 'transplantDate';
+const SORT_KEYS: SortKey[] = ['name', 'sowDate', 'transplantDate'];
 
 export default function Plantings() {
   const { plantings, removePlanting, clearAllPlantings } = useGardenStore();
@@ -114,9 +115,10 @@ export default function Plantings() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<PlantCategory | ''>('');
   const [filterBed, setFilterBed] = useState('');
-  const [sort, setSort] = useState<SortKey>(
-    () => (localStorage.getItem('plantings-sort') as SortKey | null) ?? 'sowDate'
-  );
+  const [sort, setSort] = useState<SortKey>(() => {
+    const stored = localStorage.getItem('plantings-sort');
+    return SORT_KEYS.includes(stored as SortKey) ? (stored as SortKey) : 'sowDate';
+  });
 
   const setSortPersisted = (key: SortKey) => {
     localStorage.setItem('plantings-sort', key);
