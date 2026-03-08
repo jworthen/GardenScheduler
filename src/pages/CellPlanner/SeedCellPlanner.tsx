@@ -543,10 +543,14 @@ export default function SeedCellPlanner() {
 
               {/* Hint bar */}
               <div className="mb-3 text-xs text-gray-400 print:hidden">
-                {isErasing
+                {dragSourceKey
+                  ? 'Dragging — drop onto another cell to move or swap it.'
+                  : isErasing
                   ? 'Eraser active — click or drag cells to clear them. Right-click also clears.'
                   : activeSeed
                   ? `Painting "${(!activeSeed.itemId && dbVarietyLabel.trim()) ? dbVarietyLabel.trim() : activeSeed.varietyName}" — click or drag cells. Right-click to clear.`
+                  : Object.keys(activePlan.cells).length > 0
+                  ? 'Select a seed to paint · drag filled cells to move or swap · right-click to clear.'
                   : 'Select a seed or the eraser from the stash panel, then click cells to fill them.'}
               </div>
 

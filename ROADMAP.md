@@ -9,6 +9,10 @@
 
 ---
 
+## Complete
+
+---
+
 ## Feature 1: Multi-User Accounts & Hosting
 `[x]` **Complete.**
 
@@ -31,28 +35,77 @@ The app previously ran entirely in the browser with localStorage. Backend, datab
 
 ---
 
-## Feature 2: Harvest Tracking
-**No dependencies — can be built now.**
-**Inspired by: MyFolia, GrowVeg, SmartGardener, Growstuff.**
+## Feature 15: Seed Database Redesign — Species-Level Model
+`[x]` **Complete.**
 
-Close the loop on the growing cycle by letting users record what they actually got out of the ground.
+Redesign the seed database from a variety-focused list to a species/crop-type backbone where agronomic data lives, and let users supply their own variety names.
+
+### Rationale
+The original database tried to ship a curated list of specific varieties, but no fixed dataset can cover the range of what real gardeners grow. The database is now at the *species / crop type* level (Tomato — Indeterminate, Basil, French Filet Bean, etc.) — this is where the useful agronomic data lives: frost tolerance, days to maturity ranges, spacing, sowing depth, light needs. Users supply their own variety name and attach it to a species record.
 
 ### How it works
-1. From any planting record, tap "Log Harvest" and enter date, quantity, and unit (lbs, oz, count, bunches, etc.)
-2. The planting accumulates a running harvest total across the whole season
-3. The dashboard shows total harvests this season and a "money saved" estimate based on average grocery prices
+1. The database contains crop type records with fully curated agronomic data
+2. When adding a planting, the user picks a crop type, then optionally types their variety name freely
+3. Planting date calculations and task generation key off the crop type; the variety name is used for display throughout
+4. Planting records store both `seedId` (crop type) and `varietyName` (user-supplied)
+
+### As built
+- [x] Audit and flatten seed database to crop-type level — removed 36 redundant variety-specific records; 154 → 118 records
+- [x] Cleaned up ~49 `commonName` values that embedded variety names
+- [x] Added `varietyName?: string` field to `PlantingEntry` type
+- [x] `addPlanting` store action accepts and persists `varietyName`
+- [x] "Add to Calendar" modal: new optional Variety Name input field
+- [x] Calendar, dashboard, tasks: display `varietyName` as primary label with `seedName` shown as context
+- [x] Task labels (`generateTasksForPlanting`) use `varietyName` when present
+- [x] Cell planner: DB-picked seeds show a "Variety label" text input; label passes through to "Start Plantings"
+- [x] Two-step "Add to Calendar" picker: step 1 prompts for variety name; step 2 shows calculated dates + options
+- [x] Per-planting days-to-maturity override: recalculates harvest/bloom dates live; stored as `daysToMaturityOverride`
+- [x] Revised Feature 9 admin queue: renamed to "Crop Type Request Queue"; duplicate-match error explains the variety-name workaround
+
+---
+
+## Feature 4: Seed Cell Planner
+`[x]` **Complete.**
+
+### As built
+Three-panel layout: plans list (left) | grid (center) | seed stash (right).
+
+- Grid configuration via a "New Plan" dialog — name, cols × rows, with one-click presets for 50/72/128/288-cell flats
+- Click or drag to paint cells; right-click or Eraser tool to clear; Eraser supports drag-erase
+- Drag filled cells to move or swap them — filled ↔ filled swaps, filled → empty moves
+- Color coding by plant category — distinct background + left-border accent per category
+- Cell numbers in empty cells for orientation
+- Legend below grid showing each variety and cell count
+- Stash panel: Eraser, inventory seeds, plus a search-first all-seeds picker
+- Plans saved per user in Firestore, synced alongside all other garden data
+- Print view: sidebars hidden, grid + legend rendered clean; auto-landscape when cols > rows
 
 ### Scope
-- [ ] Harvest log model: plantingId, date, quantity, unit, notes
-- [ ] "Log Harvest" button on planting cards and planting detail page
-- [ ] Running harvest total per planting (shown on planting card)
-- [ ] Season summary on dashboard: total harvests by crop, total weight
-- [ ] Optional: money-saved calculator — user enters market price per unit; app shows cumulative value of all harvests (inspired by SmartGardener)
-- [ ] Optional: average yield per bed/area over multiple seasons
+- [x] Grid configuration: columns × rows, optional flat size presets
+- [x] Click-and-drag cell painting with per-seed color coding
+- [x] Cell labels: variety name in each filled cell; cell number in empty cells
+- [x] Save/load named plans ("Spring 2026 — Greenhouse Flat 1")
+- [x] Print view: clean grid, legend at bottom, date in header, auto-landscape for wide trays
+- [x] Color coding: each category gets a distinct background + accent color
+- [x] Drag-to-move/swap: drag any filled cell onto another to swap (filled ↔ filled) or move (filled → empty); eraser mode disables drag
 
-### Notes
-- Harvest data is already implicitly expected by users who log plantings — this is the natural completion of the planting lifecycle
-- Harvest history becomes more valuable over seasons as a record of what actually performed well
+---
+
+## Feature 20: Drag-and-Drop Cell Swap in the Cell Planner
+`[x]` **Complete** (shipped as part of Feature 4).
+
+Let users rearrange already-filled cells by dragging one cell onto another to swap their contents — without having to erase and repaint.
+
+### Scope
+- [x] Mouse-based drag on grid cells (mousedown / mousemove / mouseup — avoids browser native DnD conflicts)
+- [x] Swap filled ↔ filled: exchange `CellPlanCell` data between two cell keys in the plan
+- [x] Move filled → empty: cut from source, paste to target
+- [x] Auto-save plan after each drag operation (same as paint/erase)
+- [x] Visual affordance: drag-over cell gets a highlighted border; source cell dims to 40% opacity
+- [x] Grab cursor on filled cells when no seed or eraser is active
+- [x] Eraser-active state disables drag-and-drop to avoid conflicting gestures
+- [x] Hint bar updates to "Dragging — drop onto another cell to move or swap it." during a drag
+- [x] Print view unaffected
 
 ---
 
@@ -86,86 +139,7 @@ Generate print-ready tags for each plant in your garden. Each tag includes the v
 - [x] Round pot label layout (2.5″ circle with cut-guide border)
 - [x] Seed packet label layout (3.5″ × 2″ landscape, two-column)
 - [x] Offline-safe QR option: encodes plant name, crop type, and key dates as plain text directly in the QR payload — readable on any phone without internet
-
-### Notes
-- MyFolia's QR tags were one of its most distinctive and beloved features — worth emulating closely
-- For unauthenticated users, the QR code can encode a compact JSON payload (variety, dates, notes) directly so the tag remains useful even without an account or a live URL
-
----
-
-## Feature 4: Seed Cell Planner
-`[x]` **Complete.**
-
-### As built
-Three-panel layout: plans list (left) | grid (center) | seed stash (right).
-
-- Grid configuration via a "New Plan" dialog — name, cols × rows, with one-click presets for 50/72/128/288-cell flats
-- Click or drag to paint cells; right-click or Eraser tool to clear; Eraser supports drag-erase
-- Color coding by plant category — distinct background + left-border accent per category
-- Cell numbers in empty cells for orientation
-- Legend below grid showing each variety and cell count
-- Stash panel: Eraser, inventory seeds, plus a search-first all-seeds picker
-- Plans saved per user in Firestore, synced alongside all other garden data
-- Print view: sidebars hidden, grid + legend rendered clean; auto-landscape when cols > rows
-
-### Scope
-- [x] Grid configuration: columns × rows, optional flat size presets
-- [x] Click-and-drag cell painting with per-seed color coding
-- [x] Cell labels: variety name in each filled cell; cell number in empty cells
-- [x] Save/load named plans ("Spring 2026 — Greenhouse Flat 1")
-- [x] Print view: clean grid, legend at bottom, date in header, auto-landscape for wide trays
-- [x] Color coding: each category gets a distinct background + accent color
-
----
-
-## Feature 20: Drag-and-Drop Cell Swap in the Cell Planner
-**Requires: Feature 4 (Cell Planner). No other dependencies.**
-
-Let users rearrange already-filled cells by dragging one cell onto another to swap their contents — without having to erase and repaint.
-
-### How it works
-1. While the Eraser tool is **not** active, the user drags a filled cell onto any other cell
-2. If the target cell is also filled, the two cells swap their seed/variety assignments
-3. If the target cell is empty, the dragged cell's contents move to it and the source becomes empty
-4. Drag handles are implied by a subtle grab cursor on hover; no separate drag mode toggle needed
-
-### Scope
-- [ ] HTML5 drag-and-drop on grid cells (dragstart / dragover / drop)
-- [ ] Swap filled ↔ filled: exchange `CellPlanCell` data between two cell keys in the plan
-- [ ] Move filled → empty: cut from source, paste to target
-- [ ] Auto-save plan after each drag operation (same as paint/erase)
-- [ ] Visual affordance: drag-over cell gets a highlighted border to show it will receive the drop
-- [ ] Eraser-active state disables drag-and-drop to avoid conflicting gestures
-- [ ] Print view unaffected
-
-### Notes
-- Drag-and-drop uses the browser's native HTML5 API — no extra library needed
-- Touch support (mobile) requires a separate pointer-events approach if needed; ship desktop first
-
----
-
-## Feature 21: Cell Planner Seeding Task
-**Requires: Feature 4 (Cell Planner).**
-
-Let users attach a target seeding date to a cell plan so the task list reminds them when it's time to fill the flat.
-
-### How it works
-1. Each cell plan gains an optional "Seeding date" field — a date picker on the plan detail or in the New/Edit Plan dialog
-2. When a seeding date is set, the app creates one task: "Seed [Plan Name] flat" due on that date
-3. The task appears in the task list and dashboard like any other task; completing it marks the flat as seeded
-4. If the seeding date is changed or the plan is deleted, the task updates or is removed accordingly
-
-### Scope
-- [ ] Add optional `seedingDate?: string` field to `CellPlan` type
-- [ ] Date picker for seeding date in the New Plan dialog and in the plan header (edit in place)
-- [ ] On save, create a single `custom` task tied to the plan: "Seed [Plan Name] flat" on `seedingDate`
-- [ ] On plan update (date changed or cleared), remove the old task and create a new one if needed
-- [ ] On plan delete, remove the associated seeding task
-- [ ] Task displays the plan name and optionally the cell count: "Seed Spring Flat 1 (72 cells)"
-
-### Notes
-- One task per plan regardless of how many varieties are in it — the unit of work is filling the whole flat
-- Does not replace or duplicate the individual start-indoors tasks generated from calendar plantings; this is specifically for planning sessions where the user works from the cell planner rather than from individual planting records
+- [x] Bulk print: "Print Tags" button on the Plantings page prints all visible plantings at once, repeating each tag by quantity
 
 ---
 
@@ -189,156 +163,6 @@ Dedicated sidebar page for viewing and managing all planting records.
 - [x] Search, filter by bed, filter by category
 - [x] Sort by sow date, name, transplant date (persisted)
 - [x] Empty state for new users
-
----
-
-## Feature 5: Companion Planting Recommendations
-`[~]` **Partially complete.**
-**No dependencies — enriches the existing seed database.**
-**Inspired by: GrowVeg (evidence-based only), Planter (real-time visual alerts), SmartGardener.**
-
-Show which plants help each other and which should be kept apart, based on scientific evidence rather than gardening folklore.
-
-### How it works
-1. Each seed in the database has a list of beneficial companions and plants to avoid
-2. When a user views a seed, companions are shown with a brief rationale
-3. In future, companions could be highlighted visually when placing plants near each other in the Seed Cell Planner
-
-### Design principle — evidence-based only
-Follow GrowVeg's approach: only list companions supported by published research. Don't list "bad companions" unless the evidence is solid — much of the bad-companion folklore (e.g. onions stunting beans) has never been scientifically confirmed.
-
-### Scope
-- [x] Companion data fields on seed records: `companionPlants: string[]`, `avoidPlanting: string[]`
-- [x] Companion planting section on seed detail pages
-- [ ] "Good neighbors" badge on the planting calendar when a companion is already planted nearby (same bed)
-- [ ] Optional: filter seed database by "companions well with [X]"
-
----
-
-## Feature 6: Photo Journaling
-`[~]` **Partially complete.**
-**Requires: Feature 1 (for cloud image storage).**
-**Inspired by: MyFolia, Gardenize, Garden Tags, Growstuff.**
-
-Let users attach photos to journal entries, planting records, and harvest logs to build a visual record of each season.
-
-### How it works
-1. Any journal entry, planting, or harvest log can have one or more photos attached
-2. Each planting accumulates a photo timeline showing the plant's progression from seed to harvest
-3. A garden gallery view shows all photos in reverse-chronological order
-
-### Scope
-- [x] Photo upload on journal entries (Firebase Storage)
-- [x] Photo attachment on planting records
-- [x] Garden gallery: all photos across journal entries and plantings in a grid view, filterable by source
-- [x] Photos deleted from Storage when parent entry or planting is removed
-- [x] Client-side 10 MB size guard before upload
-- [ ] Photo attachment on harvest logs (blocked on Feature 2)
-- [ ] Per-planting photo timeline (chronological, labeled by milestone or date)
-- [ ] Optional: weather conditions auto-recorded alongside each photo entry (inspired by MyFolia)
-
----
-
-## Feature 7: Multiple Gardens per User
-**Requires: Feature 1.**
-
-Allow a single user to manage more than one named garden (e.g. "Front Yard Beds", "Community Plot", "Greenhouse").
-
-### How it works
-1. User creates one or more gardens, each with its own name, location, and frost dates
-2. A garden switcher in the sidebar lets the user jump between gardens
-3. All plantings, tasks, inventory, and journal entries are scoped to the active garden
-4. Firestore path changes from `users/{uid}/data/gardenData` to `users/{uid}/gardens/{gardenId}/data`
-
-### Scope
-- [ ] Garden model: id, name, location (zone, frost dates), createdAt
-- [ ] Garden switcher UI in the sidebar (dropdown or list)
-- [ ] "New garden" flow (name + location, mirrors onboarding)
-- [ ] All store state scoped per garden; switching garden loads that garden's data from Firestore
-- [ ] Profile page lists all gardens with edit/delete options
-- [ ] Migrate existing single-garden data to the new multi-garden Firestore structure
-
-### Notes
-- Free tier could cap at 1–2 gardens; paid tier gets unlimited (ties into Feature 14)
-
----
-
-## Feature 8: In-App User Feedback & Suggestions
-**No dependencies — standalone feature.**
-
-Let users send feature suggestions, bug reports, or general feedback without leaving the app. Lightweight and low-friction — a single form that routes to a moderated inbox.
-
-### How it works
-1. A persistent "Send Feedback" entry point lives in the app (footer link or help menu)
-2. User selects a category (Bug report / Feature suggestion / General feedback), writes a short message, and submits
-3. Submissions land in an admin inbox; popular or recurring suggestions can be surfaced to inform the roadmap
-
-### Guardrails
-- Rate limiting per user/IP to prevent spam
-- Category required (reduces noise, helps triage)
-- No PII collected beyond what the user voluntarily includes in the message
-- No public-facing voting or comment threads in v1 — keep it simple and one-directional first
-
-### Scope
-- [ ] Feedback button/link accessible from all pages
-- [ ] Submission form: category selector + freeform text (500 char limit)
-- [ ] Rate limit: max 5 submissions per user per day
-- [ ] Admin inbox view: list of submissions filterable by category and date
-- [ ] Auto-reply email acknowledging receipt (optional but friendly)
-- [ ] Optional in v2: upvoting / "me too" on surfaced suggestions
-
----
-
-## Feature 9: User-Requested Database Additions
-`[~]` **Mostly complete — reduced in scope given seed DB redesign direction.**
-
-Allow users to request that a new crop type be added to the database. Under the redesigned model (Feature 15), the database covers species/crop types rather than individual varieties — so the request pipeline is narrower and lower-volume than originally planned.
-
-### How it works
-1. User submits a request for a missing crop type
-2. The request is queued for admin review, optionally auto-filled via OpenFarm API
-3. Once approved, the entry is available to all users
-
-### Guardrails
-- Duplicate detection: check if the entry already exists before accepting the request
-- Rate limiting: cap requests per user per day to prevent spam
-- Admin review queue: all new entries require approval before going live
-- Minimal required fields: plant type at minimum; freeform notes optional
-
-### Scope
-- [x] Request submission form (type + variety + optional notes)
-- [x] Duplicate check against existing database entries on submission
-- [x] Admin review queue UI (approve / reject / request more info)
-- [x] Automated pre-population via OpenFarm API — "Auto-fill" button in the approve modal
-- [x] Rate limiting: 5 requests per user per day
-- [ ] Email/notification to user when their request is approved or rejected
-- [ ] Ability for users to submit corrections to existing crop entries (e.g. wrong spacing) — routed to the same admin review queue
-
----
-
-## Feature 10: Seed Swap Marketplace
-**Requires: Feature 1.**
-**Inspired by [MyFolia's swap system](https://web.archive.org/web/20131206102911/http://myfolia.com/swaps).**
-
-A community swap marketplace where users list seeds they have and seeds they want, and the app automatically finds compatible swap partners.
-
-### How it works
-1. **Stash** — user marks seeds from the seed database as "I have this to swap," with quantity and any notes (e.g. "2026 harvest, 20 seeds")
-2. **Wishlist** — user marks seeds they are looking for
-3. **Matching** — the app finds other users where:
-   - My stash contains something on their wishlist, AND
-   - Their stash contains something on my wishlist
-4. **Swap request** — either user can initiate a swap proposal, specifying which seeds they're offering and what they'd like in return
-5. **Swap tracking** — each accepted swap gets a unique swap ID; both parties mark it complete once seeds have been received
-
-### Scope
-- [ ] Stash: add/remove seeds from seed database, set quantity, add notes
-- [ ] Wishlist: add/remove seeds from seed database
-- [ ] Match feed: list of users with compatible stash/wishlist pairs
-- [ ] Swap request flow: propose → accept/decline → in-transit → received
-- [ ] Swap history and tracking per user
-- [ ] Optional: map showing where seeds have traveled (like MyFolia)
-- [ ] Optional: public user profiles showing stash and swap reputation
 
 ---
 
@@ -393,6 +217,311 @@ Mark seedlings as available to share and send a link — anyone with the link ca
 - The share link is permanent and always reflects current availability — no need to re-send when plantings change
 - No email sent by the app; coordination (pick-up time, location) happens however the grower and claimant prefer outside the app
 - Available quantity on the public page deducts confirmed reservations only, so pending claims don't block others from reserving
+
+---
+
+## In Progress
+
+---
+
+## Feature 6: Photo Journaling
+`[~]` **Partially complete.**
+**Requires: Feature 1 (for cloud image storage).**
+**Inspired by: MyFolia, Gardenize, Garden Tags, Growstuff.**
+
+Let users attach photos to journal entries, planting records, and harvest logs to build a visual record of each season.
+
+### How it works
+1. Any journal entry, planting, or harvest log can have one or more photos attached
+2. Each planting accumulates a photo timeline showing the plant's progression from seed to harvest
+3. A garden gallery view shows all photos in reverse-chronological order
+
+### Scope
+- [x] Photo upload on journal entries (Firebase Storage)
+- [x] Photo attachment on planting records
+- [x] Garden gallery: all photos across journal entries and plantings in a grid view, filterable by source
+- [x] Photos deleted from Storage when parent entry or planting is removed
+- [x] Client-side 10 MB size guard before upload
+- [ ] Photo attachment on harvest logs (blocked on Feature 2)
+- [ ] Per-planting photo timeline (chronological, labeled by milestone or date)
+- [ ] Optional: weather conditions auto-recorded alongside each photo entry (inspired by MyFolia)
+
+---
+
+## Feature 16: Garden Bed Manager
+`[~]` **Partially complete.**
+**No dependencies — enriches most other features.**
+
+Make "bed location" a real entity rather than a free-text field. Named, dimensioned beds unlock per-bed planting history, companion checks, and eventually a visual layout.
+
+### How it works
+1. User defines their beds once (name, dimensions, notes) — e.g. "Raised Bed A (4×8 ft)", "Front Border", "Greenhouse Bench"
+2. When adding a planting, bed location is a dropdown of named beds rather than a text field
+3. The calendar and dashboard can filter by bed; per-bed history builds over seasons
+
+### Scope
+- [x] Bed model: id, name, width, length, notes, indoor flag (for seed-starting areas)
+- [x] Bed manager UI in Settings: create, edit, delete beds with inline forms
+- [x] Planting form: "Bed Location" uses datalist autocomplete from named beds (free-text still allowed)
+- [x] Journal form: same datalist autocomplete for bed location
+- [x] Beds synced to Firestore alongside other user data
+- [ ] Calendar / timeline: filter by bed
+- [ ] Dashboard: per-bed planting count for the current season
+- [ ] Optional: per-bed yield history once Feature 2 (Harvest Tracking) ships
+- [ ] Optional: "What's in this bed" summary — all current and past plantings for a given bed
+
+### Notes
+- Lays the groundwork for a drag-and-drop visual garden map later
+- Beds scoped per garden if Feature 7 (Multiple Gardens) ships
+
+---
+
+## Feature 5: Companion Planting Recommendations
+`[~]` **Partially complete.**
+**No dependencies — enriches the existing seed database.**
+**Inspired by: GrowVeg (evidence-based only), Planter (real-time visual alerts), SmartGardener.**
+
+Show which plants help each other and which should be kept apart, based on scientific evidence rather than gardening folklore.
+
+### How it works
+1. Each seed in the database has a list of beneficial companions and plants to avoid
+2. When a user views a seed, companions are shown with a brief rationale
+3. In future, companions could be highlighted visually when placing plants near each other in the Seed Cell Planner
+
+### Design principle — evidence-based only
+Follow GrowVeg's approach: only list companions supported by published research. Don't list "bad companions" unless the evidence is solid — much of the bad-companion folklore (e.g. onions stunting beans) has never been scientifically confirmed.
+
+### Scope
+- [x] Companion data fields on seed records: `companionPlants: string[]`, `avoidPlanting: string[]`
+- [x] Companion planting section on seed detail pages
+- [ ] "Good neighbors" badge on the planting calendar when a companion is already planted nearby (same bed)
+- [ ] Optional: filter seed database by "companions well with [X]"
+
+---
+
+## Feature 9: User-Requested Database Additions
+`[~]` **Mostly complete — reduced in scope given seed DB redesign direction.**
+
+Allow users to request that a new crop type be added to the database. Under the redesigned model (Feature 15), the database covers species/crop types rather than individual varieties — so the request pipeline is narrower and lower-volume than originally planned.
+
+### How it works
+1. User submits a request for a missing crop type
+2. The request is queued for admin review, optionally auto-filled via OpenFarm API
+3. Once approved, the entry is available to all users
+
+### Guardrails
+- Duplicate detection: check if the entry already exists before accepting the request
+- Rate limiting: cap requests per user per day to prevent spam
+- Admin review queue: all new entries require approval before going live
+- Minimal required fields: plant type at minimum; freeform notes optional
+
+### Scope
+- [x] Request submission form (type + variety + optional notes)
+- [x] Duplicate check against existing database entries on submission
+- [x] Admin review queue UI (approve / reject / request more info)
+- [x] Automated pre-population via OpenFarm API — "Auto-fill" button in the approve modal
+- [x] Rate limiting: 5 requests per user per day
+- [ ] Email/notification to user when their request is approved or rejected
+- [ ] Ability for users to submit corrections to existing crop entries (e.g. wrong spacing) — routed to the same admin review queue
+
+---
+
+## Planned — Near Term
+
+---
+
+## Feature 2: Harvest Tracking
+**No dependencies — can be built now.**
+**Inspired by: MyFolia, GrowVeg, SmartGardener, Growstuff.**
+
+Close the loop on the growing cycle by letting users record what they actually got out of the ground.
+
+### How it works
+1. From any planting record, tap "Log Harvest" and enter date, quantity, and unit (lbs, oz, count, bunches, etc.)
+2. The planting accumulates a running harvest total across the whole season
+3. The dashboard shows total harvests this season and a "money saved" estimate based on average grocery prices
+
+### Scope
+- [ ] Harvest log model: plantingId, date, quantity, unit, notes
+- [ ] "Log Harvest" button on planting cards and planting detail page
+- [ ] Running harvest total per planting (shown on planting card)
+- [ ] Season summary on dashboard: total harvests by crop, total weight
+- [ ] Optional: money-saved calculator — user enters market price per unit; app shows cumulative value of all harvests (inspired by SmartGardener)
+- [ ] Optional: average yield per bed/area over multiple seasons
+
+### Notes
+- Harvest data is already implicitly expected by users who log plantings — this is the natural completion of the planting lifecycle
+- Harvest history becomes more valuable over seasons as a record of what actually performed well
+
+---
+
+## Feature 19: Pest & Disease Log
+**No dependencies — natural extension of the journal.**
+**Inspired by: MyFolia, Growstuff, GrowVeg.**
+
+Record pest sightings and disease observations linked to specific plantings so problems can be tracked and patterns spotted across seasons.
+
+### How it works
+1. From any planting detail, the user logs an observation — pest spotted, disease signs, environmental damage
+2. Observations are tagged by type and severity; photos (Feature 6) can be attached
+3. Active high-severity issues surface on the dashboard
+
+### Scope
+- [ ] Observation model: plantingId, date, type (pest / disease / environmental), name, severity (low / medium / high), notes, photos
+- [ ] "Log Observation" button on planting detail panel
+- [ ] Observations list on planting detail: chronological with severity badges
+- [ ] Dashboard alert for plantings with active high-severity observations
+- [ ] Optional: common pest/disease name lookup with basic treatment notes
+- [ ] Optional: season-level observation history, filterable by type
+
+---
+
+## Feature 21: Cell Planner Seeding Task
+**Requires: Feature 4 (Cell Planner).**
+
+Let users attach a target seeding date to a cell plan so the task list reminds them when it's time to fill the flat.
+
+### How it works
+1. Each cell plan gains an optional "Seeding date" field — a date picker on the plan detail or in the New/Edit Plan dialog
+2. When a seeding date is set, the app creates one task: "Seed [Plan Name] flat" due on that date
+3. The task appears in the task list and dashboard like any other task; completing it marks the flat as seeded
+4. If the seeding date is changed or the plan is deleted, the task updates or is removed accordingly
+
+### Scope
+- [ ] Add optional `seedingDate?: string` field to `CellPlan` type
+- [ ] Date picker for seeding date in the New Plan dialog and in the plan header (edit in place)
+- [ ] On save, create a single `custom` task tied to the plan: "Seed [Plan Name] flat" on `seedingDate`
+- [ ] On plan update (date changed or cleared), remove the old task and create a new one if needed
+- [ ] On plan delete, remove the associated seeding task
+- [ ] Task displays the plan name and optionally the cell count: "Seed Spring Flat 1 (72 cells)"
+
+### Notes
+- One task per plan regardless of how many varieties are in it — the unit of work is filling the whole flat
+- Does not replace or duplicate the individual start-indoors tasks generated from calendar plantings; this is specifically for planning sessions where the user works from the cell planner rather than from individual planting records
+
+---
+
+## Feature 18: Season Management & Year-Over-Year History
+**No hard dependencies — more valuable once users have completed at least one season.**
+
+Make the app aware of seasons so users can start fresh each year without losing history.
+
+### How it works
+1. A year picker scopes the calendar, tasks, and dashboard to the active season
+2. A "New Season" wizard at year-start lets users archive the old season and carry forward recurring plantings
+3. Past seasons stay fully browsable
+
+### Scope
+- [ ] Season / year selector in the sidebar or header that scopes calendar, tasks, and dashboard
+- [ ] "Start New Season" wizard: review last year's plantings, select which to carry forward (with recalculated dates), archive the rest
+- [ ] Archived season view: read-only calendar and journal for past years
+- [ ] Dashboard year-over-year note: e.g. "You started tomatoes 3 weeks earlier this year than last"
+- [ ] Perennial / recurring planting flag: marks a planting to auto-seed into the new season
+- [ ] Optional: end-of-season summary entry — freeform "season retrospective" journal type
+
+---
+
+## Feature 17: Task Notifications
+**Requires: Feature 1.**
+
+Push upcoming tasks and frost warnings to users so they don't have to open the app every day to stay on schedule.
+
+### How it works
+1. User opts into notifications and sets delivery preferences
+2. A daily digest lists tasks due today and coming up; frost alerts fire when the forecast dips near the user's threshold
+
+### Scope
+- [ ] Notification preferences: on/off, lead time (1 / 3 / 7 days ahead), delivery method (email / browser push)
+- [ ] Daily digest email: tasks due today + next 3 days, formatted cleanly, unsubscribe link
+- [ ] Browser push notification support (service worker + Web Push API)
+- [ ] Frost warning: triggered when forecast low ≤ last spring frost temp + configurable buffer
+- [ ] Scheduled Cloud Function (or cron job) to evaluate and send notifications
+- [ ] Snooze / unsubscribe controls in the app
+
+### Notes
+- Email delivery via Firebase Trigger Email extension or a transactional provider (Resend, SendGrid)
+- Frost alerts require a weather API — Open-Meteo is free, accurate, and requires no API key
+- Ship email-only first; push notifications follow once the email flow is stable
+
+---
+
+## Feature 8: In-App User Feedback & Suggestions
+**No dependencies — standalone feature.**
+
+Let users send feature suggestions, bug reports, or general feedback without leaving the app. Lightweight and low-friction — a single form that routes to a moderated inbox.
+
+### How it works
+1. A persistent "Send Feedback" entry point lives in the app (footer link or help menu)
+2. User selects a category (Bug report / Feature suggestion / General feedback), writes a short message, and submits
+3. Submissions land in an admin inbox; popular or recurring suggestions can be surfaced to inform the roadmap
+
+### Guardrails
+- Rate limiting per user/IP to prevent spam
+- Category required (reduces noise, helps triage)
+- No PII collected beyond what the user voluntarily includes in the message
+- No public-facing voting or comment threads in v1 — keep it simple and one-directional first
+
+### Scope
+- [ ] Feedback button/link accessible from all pages
+- [ ] Submission form: category selector + freeform text (500 char limit)
+- [ ] Rate limit: max 5 submissions per user per day
+- [ ] Admin inbox view: list of submissions filterable by category and date
+- [ ] Auto-reply email acknowledging receipt (optional but friendly)
+- [ ] Optional in v2: upvoting / "me too" on surfaced suggestions
+
+---
+
+## Planned — Later
+
+---
+
+## Feature 7: Multiple Gardens per User
+**Requires: Feature 1.**
+
+Allow a single user to manage more than one named garden (e.g. "Front Yard Beds", "Community Plot", "Greenhouse").
+
+### How it works
+1. User creates one or more gardens, each with its own name, location, and frost dates
+2. A garden switcher in the sidebar lets the user jump between gardens
+3. All plantings, tasks, inventory, and journal entries are scoped to the active garden
+4. Firestore path changes from `users/{uid}/data/gardenData` to `users/{uid}/gardens/{gardenId}/data`
+
+### Scope
+- [ ] Garden model: id, name, location (zone, frost dates), createdAt
+- [ ] Garden switcher UI in the sidebar (dropdown or list)
+- [ ] "New garden" flow (name + location, mirrors onboarding)
+- [ ] All store state scoped per garden; switching garden loads that garden's data from Firestore
+- [ ] Profile page lists all gardens with edit/delete options
+- [ ] Migrate existing single-garden data to the new multi-garden Firestore structure
+
+### Notes
+- Free tier could cap at 1–2 gardens; paid tier gets unlimited (ties into Feature 14)
+
+---
+
+## Feature 10: Seed Swap Marketplace
+**Requires: Feature 1.**
+**Inspired by [MyFolia's swap system](https://web.archive.org/web/20131206102911/http://myfolia.com/swaps).**
+
+A community swap marketplace where users list seeds they have and seeds they want, and the app automatically finds compatible swap partners.
+
+### How it works
+1. **Stash** — user marks seeds from the seed database as "I have this to swap," with quantity and any notes (e.g. "2026 harvest, 20 seeds")
+2. **Wishlist** — user marks seeds they are looking for
+3. **Matching** — the app finds other users where:
+   - My stash contains something on their wishlist, AND
+   - Their stash contains something on my wishlist
+4. **Swap request** — either user can initiate a swap proposal, specifying which seeds they're offering and what they'd like in return
+5. **Swap tracking** — each accepted swap gets a unique swap ID; both parties mark it complete once seeds have been received
+
+### Scope
+- [ ] Stash: add/remove seeds from seed database, set quantity, add notes
+- [ ] Wishlist: add/remove seeds from seed database
+- [ ] Match feed: list of users with compatible stash/wishlist pairs
+- [ ] Swap request flow: propose → accept/decline → in-transit → received
+- [ ] Swap history and tracking per user
+- [ ] Optional: map showing where seeds have traveled (like MyFolia)
+- [ ] Optional: public user profiles showing stash and swap reputation
 
 ---
 
@@ -465,128 +594,6 @@ Monetize the app for users outside your personal network.
 
 ---
 
-## Feature 15: Seed Database Redesign — Species-Level Model
-`[x]` **Complete.**
-
-Redesign the seed database from a variety-focused list to a species/crop-type backbone where agronomic data lives, and let users supply their own variety names.
-
-### Rationale
-The original database tried to ship a curated list of specific varieties, but no fixed dataset can cover the range of what real gardeners grow. The database is now at the *species / crop type* level (Tomato — Indeterminate, Basil, French Filet Bean, etc.) — this is where the useful agronomic data lives: frost tolerance, days to maturity ranges, spacing, sowing depth, light needs. Users supply their own variety name and attach it to a species record.
-
-### How it works
-1. The database contains crop type records with fully curated agronomic data
-2. When adding a planting, the user picks a crop type, then optionally types their variety name freely
-3. Planting date calculations and task generation key off the crop type; the variety name is used for display throughout
-4. Planting records store both `seedId` (crop type) and `varietyName` (user-supplied)
-
-### As built
-- [x] Audit and flatten seed database to crop-type level — removed 36 redundant variety-specific records; 154 → 118 records
-- [x] Cleaned up ~49 `commonName` values that embedded variety names
-- [x] Added `varietyName?: string` field to `PlantingEntry` type
-- [x] `addPlanting` store action accepts and persists `varietyName`
-- [x] "Add to Calendar" modal: new optional Variety Name input field
-- [x] Calendar, dashboard, tasks: display `varietyName` as primary label with `seedName` shown as context
-- [x] Task labels (`generateTasksForPlanting`) use `varietyName` when present
-- [x] Cell planner: DB-picked seeds show a "Variety label" text input; label passes through to "Start Plantings"
-- [x] Two-step "Add to Calendar" picker: step 1 prompts for variety name; step 2 shows calculated dates + options
-- [x] Per-planting days-to-maturity override: recalculates harvest/bloom dates live; stored as `daysToMaturityOverride`
-- [x] Revised Feature 9 admin queue: renamed to "Crop Type Request Queue"; duplicate-match error explains the variety-name workaround
-
----
-
-## Feature 16: Garden Bed Manager
-`[~]` **Partially complete.**
-**No dependencies — enriches most other features.**
-
-Make "bed location" a real entity rather than a free-text field. Named, dimensioned beds unlock per-bed planting history, companion checks, and eventually a visual layout.
-
-### How it works
-1. User defines their beds once (name, dimensions, notes) — e.g. "Raised Bed A (4×8 ft)", "Front Border", "Greenhouse Bench"
-2. When adding a planting, bed location is a dropdown of named beds rather than a text field
-3. The calendar and dashboard can filter by bed; per-bed history builds over seasons
-
-### Scope
-- [x] Bed model: id, name, width, length, notes, indoor flag (for seed-starting areas)
-- [x] Bed manager UI in Settings: create, edit, delete beds with inline forms
-- [x] Planting form: "Bed Location" uses datalist autocomplete from named beds (free-text still allowed)
-- [x] Journal form: same datalist autocomplete for bed location
-- [x] Beds synced to Firestore alongside other user data
-- [ ] Calendar / timeline: filter by bed
-- [ ] Dashboard: per-bed planting count for the current season
-- [ ] Optional: per-bed yield history once Feature 2 (Harvest Tracking) ships
-- [ ] Optional: "What's in this bed" summary — all current and past plantings for a given bed
-
-### Notes
-- Lays the groundwork for a drag-and-drop visual garden map later
-- Beds scoped per garden if Feature 7 (Multiple Gardens) ships
-
----
-
-## Feature 17: Task Notifications
-**Requires: Feature 1.**
-
-Push upcoming tasks and frost warnings to users so they don't have to open the app every day to stay on schedule.
-
-### How it works
-1. User opts into notifications and sets delivery preferences
-2. A daily digest lists tasks due today and coming up; frost alerts fire when the forecast dips near the user's threshold
-
-### Scope
-- [ ] Notification preferences: on/off, lead time (1 / 3 / 7 days ahead), delivery method (email / browser push)
-- [ ] Daily digest email: tasks due today + next 3 days, formatted cleanly, unsubscribe link
-- [ ] Browser push notification support (service worker + Web Push API)
-- [ ] Frost warning: triggered when forecast low ≤ last spring frost temp + configurable buffer
-- [ ] Scheduled Cloud Function (or cron job) to evaluate and send notifications
-- [ ] Snooze / unsubscribe controls in the app
-
-### Notes
-- Email delivery via Firebase Trigger Email extension or a transactional provider (Resend, SendGrid)
-- Frost alerts require a weather API — Open-Meteo is free, accurate, and requires no API key
-- Ship email-only first; push notifications follow once the email flow is stable
-
----
-
-## Feature 18: Season Management & Year-Over-Year History
-**No hard dependencies — more valuable once users have completed at least one season.**
-
-Make the app aware of seasons so users can start fresh each year without losing history.
-
-### How it works
-1. A year picker scopes the calendar, tasks, and dashboard to the active season
-2. A "New Season" wizard at year-start lets users archive the old season and carry forward recurring plantings
-3. Past seasons stay fully browsable
-
-### Scope
-- [ ] Season / year selector in the sidebar or header that scopes calendar, tasks, and dashboard
-- [ ] "Start New Season" wizard: review last year's plantings, select which to carry forward (with recalculated dates), archive the rest
-- [ ] Archived season view: read-only calendar and journal for past years
-- [ ] Dashboard year-over-year note: e.g. "You started tomatoes 3 weeks earlier this year than last"
-- [ ] Perennial / recurring planting flag: marks a planting to auto-seed into the new season
-- [ ] Optional: end-of-season summary entry — freeform "season retrospective" journal type
-
----
-
-## Feature 19: Pest & Disease Log
-**No dependencies — natural extension of the journal.**
-**Inspired by: MyFolia, Growstuff, GrowVeg.**
-
-Record pest sightings and disease observations linked to specific plantings so problems can be tracked and patterns spotted across seasons.
-
-### How it works
-1. From any planting detail, the user logs an observation — pest spotted, disease signs, environmental damage
-2. Observations are tagged by type and severity; photos (Feature 6) can be attached
-3. Active high-severity issues surface on the dashboard
-
-### Scope
-- [ ] Observation model: plantingId, date, type (pest / disease / environmental), name, severity (low / medium / high), notes, photos
-- [ ] "Log Observation" button on planting detail panel
-- [ ] Observations list on planting detail: chronological with severity badges
-- [ ] Dashboard alert for plantings with active high-severity observations
-- [ ] Optional: common pest/disease name lookup with basic treatment notes
-- [ ] Optional: season-level observation history, filterable by type
-
----
-
 ## Dependency map
 
 ```
@@ -605,7 +612,7 @@ Standalone (no accounts needed):
     │       └── Feature 6 remaining scope (harvest log photos)
     ├── Feature 3 (Printable Seed Tags / QR Codes)  [x]
     ├── Feature 4 (Seed Cell Planner)  [x]
-    │       ├── Feature 20 (Drag-and-Drop Cell Swap)
+    │       ├── Feature 20 (Drag-and-Drop Cell Swap)  [x]
     │       └── Feature 21 (Cell Planner Seeding Task)
     ├── Feature 5 (Companion Planting)  [~]
     ├── Feature 8 (In-App Feedback)
