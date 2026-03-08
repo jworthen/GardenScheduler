@@ -19,6 +19,7 @@ import SeedCellPlanner from './pages/CellPlanner/SeedCellPlanner';
 import GardenGallery from './pages/Gallery/GardenGallery';
 import GardenBeds from './pages/Beds/GardenBeds';
 import Plantings from './pages/Plantings/Plantings';
+import SharePage from './pages/Share/SharePage';
 
 function AppRoutes() {
   const onboardingCompleted =
@@ -93,7 +94,10 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppContent />
+        <Routes>
+          <Route path="/share/:token" element={<SharePage />} />
+          <Route path="*" element={<AppContent />} />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

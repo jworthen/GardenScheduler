@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { Trash2, Camera, X, Loader2, Tag } from 'lucide-react';
+import { Trash2, Camera, X, Loader2, Tag, Share2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
 import { PlantingEntry } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadPhoto, deletePhotos, MAX_PHOTO_BYTES } from '../../lib/photoUpload';
+import { getOrCreateShareToken, updateSharePage } from '../../lib/plantShare';
 import SeedTagModal from '../SeedTag/SeedTagModal';
 
 interface Props {
@@ -14,12 +15,14 @@ interface Props {
 }
 
 export default function PlantingDetailPanel({ planting, onClose, onRemove }: Props) {
-  const { addSuccessionPlanting, updatePlanting } = useGardenStore();
+  const { addSuccessionPlanting, updatePlanting, plantings, settings } = useGardenStore();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [successionDays, setSuccessionDays] = useState(14);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [showTag, setShowTag] = useState(false);
+  const [shareQty, setShareQty] = useState(planting.availableToShare ?? 0);
+  const [shareSaving, setShareSaving] = useState(false);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -65,6 +68,40 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
 
   const handleDateChange = (field: DateField, value: string) => {
     updatePlanting(planting.id, { [field]: value || undefined });
+  };
+
+  const saveSharing = async () => {
+    if (!user) return;
+    setShareSaving(true);
+    try {
+      updatePlanting(planting.id, { availableToShare: shareQty || undefined });
+      // Keep share page doc in sync
+      let token = settings.profile?.shareToken;
+      if (!token) {
+        token = await getOrCreateShareToken(user.uid);
+        // Token is now in Firestore userProfiles; update local settings too
+        useGardenStore.getState().updateSettings({ profile: { ...settings.profile, shareToken: token } });
+      }
+      const allPlantings = useGardenStore.getState().plantings;
+      const shareable = allPlantings
+        .map((p) => p.id === planting.id ? { ...p, availableToShare: shareQty || undefined } : p)
+        .filter((p) => (p.availableToShare ?? 0) > 0)
+        .map((p) => ({
+          plantingId: p.id,
+          seedName: p.seedName,
+          ...(p.varietyName && { varietyName: p.varietyName }),
+          category: p.category,
+          color: p.color,
+          availableToShare: p.availableToShare!,
+          reservedCount: 0,
+          ...(p.transplantDate && { transplantDate: p.transplantDate }),
+          ...(p.firstBloomDate && { firstBloomDate: p.firstBloomDate }),
+          ...(p.firstHarvestDate && { firstHarvestDate: p.firstHarvestDate }),
+        }));
+      await updateSharePage(token, user.uid, settings.profile?.gardenName ?? 'My Garden', shareable);
+    } finally {
+      setShareSaving(false);
+    }
   };
 
   return (
@@ -207,6 +244,37 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
           <Tag size={14} />
           Print Seed Tag
         </button>
+
+        {/* Sharing */}
+        <div className="mb-5 p-4 bg-stone-50 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <Share2 size={14} className="text-garden-600" />
+            <h4 className="text-sm font-semibold text-gray-900">Share with Neighbors</h4>
+          </div>
+          <div className="flex items-center gap-2 mb-3">
+            <label className="text-sm text-gray-600 flex-shrink-0">Available to give away</label>
+            <input
+              type="number"
+              className="input w-20 text-sm"
+              value={shareQty}
+              min={0}
+              onChange={(e) => setShareQty(Math.max(0, Number(e.target.value)))}
+            />
+            <span className="text-sm text-gray-600">plants</span>
+          </div>
+          <button
+            onClick={saveSharing}
+            disabled={shareSaving}
+            className="btn-secondary text-sm w-full justify-center disabled:opacity-50"
+          >
+            {shareSaving ? 'Saving…' : shareQty > 0 ? 'Update Sharing' : 'Save (0 = not sharing)'}
+          </button>
+          {(planting.availableToShare ?? 0) > 0 && (
+            <p className="text-xs text-garden-600 mt-2 text-center">
+              Currently sharing {planting.availableToShare} · share link in Profile
+            </p>
+          )}
+        </div>
 
         {/* Remove button */}
         <button

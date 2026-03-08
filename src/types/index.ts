@@ -103,6 +103,8 @@ export interface PlantingEntry {
   completedTasks?: string[];
   // Photo attachments (Firebase Storage download URLs)
   photos?: string[];
+  // Plant sharing
+  availableToShare?: number;
 }
 
 export interface Task {
@@ -174,6 +176,7 @@ export interface UserSettings {
   profile: {
     gardenName: string;
     units: 'imperial' | 'metric';
+    shareToken?: string;
   };
   onboardingCompleted: boolean;
 }
@@ -219,6 +222,22 @@ export interface GardenBed {
   notes?: string;
   indoor: boolean;
   createdAt: string;
+}
+
+export type ShareReservationStatus = 'pending' | 'confirmed' | 'cancelled';
+
+export interface ShareReservation {
+  id: string;
+  token: string;
+  userId: string;
+  plantingId: string;
+  requesterName: string;
+  requesterEmail?: string;
+  quantity: number;
+  notes?: string;
+  status: ShareReservationStatus;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export type SeedRequestStatus = 'pending' | 'approved' | 'rejected';

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, X, Flower2, Trash2 } from 'lucide-react';
+import { Plus, Search, X, Flower2, Trash2, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
@@ -96,6 +96,15 @@ function PlantingCard({
           <>
             <span>·</span>
             <span>{planting.quantity}×</span>
+          </>
+        )}
+        {(planting.availableToShare ?? 0) > 0 && (
+          <>
+            <span>·</span>
+            <span className="flex items-center gap-0.5 text-garden-600">
+              <Share2 size={10} />
+              {planting.availableToShare}
+            </span>
           </>
         )}
       </div>
