@@ -38,9 +38,6 @@ function PlantCard({
           )}
           <p className="text-xs text-gray-500 mt-0.5">{CATEGORY_LABELS[planting.category] ?? planting.category}</p>
         </div>
-        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-          {available} available
-        </span>
       </div>
 
       {/* Key dates */}
@@ -74,7 +71,9 @@ function PlantCard({
           >
             <Minus size={14} />
           </button>
-          <span className="w-6 text-center font-semibold text-gray-900">{qty}</span>
+          <span className="text-center text-sm font-semibold text-gray-900 min-w-[3.5rem]">
+            {qty} of {available}
+          </span>
           <button
             type="button"
             onClick={() => onQtyChange(Math.min(available, qty + 1))}
