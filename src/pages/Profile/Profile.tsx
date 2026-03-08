@@ -51,6 +51,26 @@ export default function Profile() {
     }
   }, [shareablePlantings.length, loadReservations]);
 
+  // Sync share page to Firestore whenever we have a token + shareable plantings.
+  // This covers the case where the token was generated locally but the Firestore
+  // doc was never written (e.g. after a token regeneration or first load).
+  useEffect(() => {
+    if (!user || !shareToken || shareablePlantings.length === 0) return;
+    const shareable = shareablePlantings.map((p) => ({
+      plantingId: p.id,
+      seedName: p.seedName,
+      ...(p.varietyName && { varietyName: p.varietyName }),
+      category: p.category,
+      color: p.color,
+      availableToShare: p.availableToShare!,
+      reservedCount: 0,
+      ...(p.transplantDate && { transplantDate: p.transplantDate }),
+      ...(p.firstBloomDate && { firstBloomDate: p.firstBloomDate }),
+      ...(p.firstHarvestDate && { firstHarvestDate: p.firstHarvestDate }),
+    }));
+    updateSharePage(shareToken, user.uid, settings.profile?.gardenName ?? 'My Garden', shareable);
+  }, [shareToken, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleGetShareLink = async () => {
     if (!user) return;
     const token = generateShareToken();
