@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { User, Leaf, MapPin, Share2, Copy, Check, Loader2 } from 'lucide-react';
 import { useGardenStore } from '../../store/useStore';
 import { useAuth } from '../../contexts/AuthContext';
+import { useGardenContext } from '../../contexts/GardenContext';
 import { lookupFrostDatesByZip, zoneData } from '../../data/frostDates';
 import PageHeader from '../../components/common/PageHeader';
 import {
@@ -15,6 +16,7 @@ import { ShareReservation } from '../../types';
 export default function Profile() {
   const { user } = useAuth();
   const { settings, updateSettings, setLocation, plantings } = useGardenStore();
+  const { activeGardenId, renameGarden } = useGardenContext();
   const [gardenName, setGardenName] = useState(settings.profile?.gardenName ?? '');
   const [units, setUnits] = useState<'imperial' | 'metric'>(settings.profile?.units ?? 'imperial');
   const [zipInput, setZipInput] = useState(settings.location.zipCode || '');
@@ -109,6 +111,8 @@ export default function Profile() {
 
   const save = () => {
     updateSettings({ profile: { gardenName, units } });
+    // Keep the gardens index name in sync
+    if (activeGardenId) renameGarden(activeGardenId, gardenName);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useGardenStore } from './store/useStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { GardenContext } from './contexts/GardenContext';
 import { useFirestoreSync } from './hooks/useFirestoreSync';
 import SignInPage from './components/Auth/SignInPage';
 import Layout from './components/Layout/Layout';
@@ -61,7 +62,7 @@ function AppRoutes() {
 }
 
 function AuthenticatedApp() {
-  const { firestoreReady } = useFirestoreSync();
+  const { firestoreReady, ...gardenContext } = useFirestoreSync();
 
   if (!firestoreReady) {
     return (
@@ -71,7 +72,11 @@ function AuthenticatedApp() {
     );
   }
 
-  return <AppRoutes />;
+  return (
+    <GardenContext.Provider value={gardenContext}>
+      <AppRoutes />
+    </GardenContext.Provider>
+  );
 }
 
 function AppContent() {

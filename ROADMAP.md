@@ -480,26 +480,32 @@ Let users send feature suggestions, bug reports, or general feedback without lea
 ---
 
 ## Feature 7: Multiple Gardens per User
+`[x]` **Complete.**
 **Requires: Feature 1.**
 
 Allow a single user to manage more than one named garden (e.g. "Front Yard Beds", "Community Plot", "Greenhouse").
 
 ### How it works
-1. User creates one or more gardens, each with its own name, location, and frost dates
-2. A garden switcher in the sidebar lets the user jump between gardens
-3. All plantings, tasks, inventory, and journal entries are scoped to the active garden
-4. Firestore path changes from `users/{uid}/data/gardenData` to `users/{uid}/gardens/{gardenId}/data`
+1. User creates gardens from the sidebar switcher; each gets its own name and inherits the current garden's location/frost settings
+2. A compact garden switcher below the logo lets the user jump between gardens — shows active garden with a check mark, delete button on others
+3. All plantings, tasks, inventory, journal entries, cell plans, and beds are scoped to the active garden
+4. Switching garden flushes the current state to Firestore, then loads and hydrates the new garden's data
+
+### Data model
+- `users/{uid}/meta/gardensIndex` → `{ gardens: GardenMeta[], updatedAt }` — lightweight index for the switcher
+- `users/{uid}/gardens/{gardenId}` → full `GardenStoreData` blob (same shape as the v1 single-garden doc)
+- `GardenContext` exposes `{ gardens, activeGardenId, switching, switchGarden, createGarden, renameGarden, deleteGarden }` to the full component tree
 
 ### Scope
-- [ ] Garden model: id, name, location (zone, frost dates), createdAt
-- [ ] Garden switcher UI in the sidebar (dropdown or list)
-- [ ] "New garden" flow (name + location, mirrors onboarding)
-- [ ] All store state scoped per garden; switching garden loads that garden's data from Firestore
-- [ ] Profile page lists all gardens with edit/delete options
-- [ ] Migrate existing single-garden data to the new multi-garden Firestore structure
-
-### Notes
-- Free tier could cap at 1–2 gardens; paid tier gets unlimited (ties into Feature 14)
+- [x] Garden model: id, name, createdAt — stored in `gardensIndex`
+- [x] Garden switcher in the sidebar: dropdown with active indicator, delete per garden, "New Garden" inline form
+- [x] "New Garden" flow: name input → creates garden (inheriting zone/frost), switches immediately
+- [x] All store state scoped per garden; switching loads new garden's data from Firestore
+- [x] Renaming a garden via Profile page syncs the name to the gardens index
+- [x] Delete garden (with confirmation); cannot delete the last garden
+- [x] Migration: on first login, existing single-garden data is automatically copied to `gardens/default` and a `gardensIndex` is created — zero user action required
+- [x] Active garden persisted in localStorage per device (device-local preference, not synced)
+- [ ] Profile page "My Gardens" section with inline rename — deferred; renaming works via Profile → Garden Name field for now
 
 ---
 

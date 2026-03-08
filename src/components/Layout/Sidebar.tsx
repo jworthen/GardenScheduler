@@ -22,6 +22,7 @@ import {
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import FeedbackModal from '../FeedbackModal';
+import GardenSwitcher from '../GardenSwitcher';
 
 const ADMIN_UID = import.meta.env.VITE_ADMIN_UID as string | undefined;
 
@@ -61,6 +62,9 @@ export default function Sidebar() {
           <p className="text-xs text-gray-500">Seed & Garden Planner</p>
         </div>
       </div>
+
+      {/* Garden switcher */}
+      <GardenSwitcher />
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
