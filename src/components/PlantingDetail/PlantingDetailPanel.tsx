@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Trash2, Camera, X, Loader2, Tag, Share2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
@@ -23,6 +23,10 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
   const [showTag, setShowTag] = useState(false);
   const [shareQty, setShareQty] = useState(planting.availableToShare ?? 0);
   const [shareSaving, setShareSaving] = useState(false);
+
+  useEffect(() => {
+    setShareQty(planting.availableToShare ?? 0);
+  }, [planting.id, planting.availableToShare]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
