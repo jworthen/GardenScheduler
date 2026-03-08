@@ -5,7 +5,7 @@ import { useGardenStore } from '../../store/useStore';
 import { PlantingEntry } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadPhoto, deletePhotos, MAX_PHOTO_BYTES } from '../../lib/photoUpload';
-import { getOrCreateShareToken, updateSharePage } from '../../lib/plantShare';
+import { generateShareToken, updateSharePage } from '../../lib/plantShare';
 import SeedTagModal from '../SeedTag/SeedTagModal';
 
 interface Props {
@@ -82,8 +82,7 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
       // Keep share page doc in sync
       let token = settings.profile?.shareToken;
       if (!token) {
-        token = await getOrCreateShareToken(user.uid);
-        // Token is now in Firestore userProfiles; update local settings too
+        token = generateShareToken();
         useGardenStore.getState().updateSettings({ profile: { ...settings.profile, shareToken: token } });
       }
       const allPlantings = useGardenStore.getState().plantings;
