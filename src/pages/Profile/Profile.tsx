@@ -241,20 +241,28 @@ export default function Profile() {
               </p>
 
               {shareUrl ? (
-                <div className="flex gap-2">
-                  <input
-                    readOnly
-                    value={shareUrl}
-                    className="input text-sm flex-1 bg-stone-50 text-gray-600"
-                  />
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={shareUrl}
+                      className="input text-sm flex-1 bg-stone-50 text-gray-600"
+                    />
+                    <button
+                      onClick={handleCopyLink}
+                      className="btn-primary text-sm flex-shrink-0"
+                    >
+                      {copied ? <Check size={15} /> : <Copy size={15} />}
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
                   <button
-                    onClick={handleCopyLink}
-                    className="btn-primary text-sm flex-shrink-0"
+                    onClick={handleGetShareLink}
+                    className="text-xs text-gray-400 hover:text-gray-600 mt-1"
                   >
-                    {copied ? <Check size={15} /> : <Copy size={15} />}
-                    {copied ? 'Copied!' : 'Copy'}
+                    Regenerate link
                   </button>
-                </div>
+                </>
               ) : (
                 <button
                   onClick={handleGetShareLink}

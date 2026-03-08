@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Share pages: anyone can read; any authenticated user can write
+    // (the token itself is the access-control mechanism)
+    match /sharePages/{token} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Reservations: anyone can create; owner can read and update their own
+    match /shareReservations/{id} {
+      allow create: if true;
+      allow read, update: if request.auth != null
+                          && request.auth.uid == resource.data.userId;
+    }
+
+    // User profiles: authenticated users can read/write their own doc only
+    match /userProfiles/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
