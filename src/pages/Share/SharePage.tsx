@@ -176,10 +176,9 @@ export default function SharePage() {
           <Leaf className="text-green-600" size={20} />
           <span className="font-bold text-green-700 text-lg">Last Frost</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">{page.gardenName}</h1>
-        {page.ownerName && (
-          <p className="text-sm text-gray-600 mt-0.5">by {page.ownerName}</p>
-        )}
+        <h1 className="text-2xl font-bold text-gray-900 mt-2">
+          {page.ownerName ? `${page.ownerName}'s Garden` : page.gardenName}
+        </h1>
         <p className="text-sm text-gray-500 mt-1">Plants available to share with the community</p>
       </div>
 
