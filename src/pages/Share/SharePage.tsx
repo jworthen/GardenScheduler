@@ -119,6 +119,7 @@ export default function SharePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { setError('Please enter your name.'); return; }
+    if (!email.trim()) { setError('Please enter your email address.'); return; }
     if (!page) return;
     setSubmitting(true);
     setError('');
@@ -131,7 +132,7 @@ export default function SharePage() {
             userId: page.userId,
             plantingId,
             requesterName: name.trim(),
-            ...(email.trim() && { requesterEmail: email.trim() }),
+            requesterEmail: email.trim(),
             quantity,
             ...(notes.trim() && { notes: notes.trim() }),
           })
@@ -239,13 +240,13 @@ export default function SharePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                     <input
                       type="email"
                       className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="So they can confirm with you"
+                      placeholder="So they can reach you to arrange pickup"
                     />
                   </div>
                   <div>
