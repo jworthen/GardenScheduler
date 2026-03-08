@@ -64,6 +64,7 @@ export interface SharePage {
   token: string;
   userId: string;
   gardenName: string;
+  ownerName?: string;
   plantings: SharePagePlanting[];
   updatedAt: number;
 }
@@ -79,11 +80,13 @@ export async function updateSharePage(
   userId: string,
   gardenName: string,
   plantings: SharePagePlanting[],
+  ownerName?: string,
 ): Promise<void> {
   await setDoc(doc(db, 'sharePages', token), {
     token,
     userId,
     gardenName,
+    ...(ownerName && { ownerName }),
     plantings,
     updatedAt: Date.now(),
   });

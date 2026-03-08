@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, Leaf, CheckCircle2 } from 'lucide-react';
+import { Loader2, Leaf, CheckCircle2, Minus, Plus } from 'lucide-react';
 import { getSharePage, createReservation, type SharePage, type SharePagePlanting } from '../../lib/plantShare';
 import { formatDisplayDateShort } from '../../utils/dateCalculations';
 
@@ -14,123 +14,21 @@ const CATEGORY_LABELS: Record<string, string> = {
   cutting: 'Cutting',
 };
 
-function ReserveForm({
-  planting,
-  token,
-  userId,
-  onSuccess,
-}: {
-  planting: SharePagePlanting;
-  token: string;
-  userId: string;
-  onSuccess: () => void;
-}) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  const available = planting.availableToShare - planting.reservedCount;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) { setError('Please enter your name.'); return; }
-    if (quantity < 1 || quantity > available) { setError(`Please choose between 1 and ${available}.`); return; }
-    setSubmitting(true);
-    setError('');
-    try {
-      await createReservation({
-        token,
-        userId,
-        plantingId: planting.plantingId,
-        requesterName: name.trim(),
-        ...(email.trim() && { requesterEmail: email.trim() }),
-        quantity,
-        ...(notes.trim() && { notes: notes.trim() }),
-      });
-      onSuccess();
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Your name *</label>
-        <input
-          className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="First name is fine"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
-        <input
-          type="email"
-          className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="So they can confirm with you"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-        <input
-          type="number"
-          min={1}
-          max={available}
-          className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-        />
-        <p className="text-xs text-gray-400 mt-0.5">{available} available</p>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
-        <input
-          className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. 'I live two streets over'"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        {submitting && <Loader2 size={14} className="animate-spin" />}
-        {submitting ? 'Submitting…' : 'Reserve Plants'}
-      </button>
-    </form>
-  );
-}
-
 function PlantCard({
   planting,
-  token,
-  userId,
+  qty,
+  onQtyChange,
 }: {
   planting: SharePagePlanting;
-  token: string;
-  userId: string;
+  qty: number;
+  onQtyChange: (qty: number) => void;
 }) {
-  const [reserving, setReserving] = useState(false);
-  const [done, setDone] = useState(false);
   const available = planting.availableToShare - planting.reservedCount;
   const displayName = planting.varietyName || planting.seedName;
-
-  if (available <= 0) return null;
+  const selected = qty > 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-5">
+    <div className={`bg-white rounded-2xl shadow-sm border p-5 transition-colors ${selected ? 'border-green-400' : 'border-stone-100'}`}>
       <div className="flex items-start gap-3 mb-3">
         <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 ${planting.color}`} />
         <div className="flex-1">
@@ -164,26 +62,29 @@ function PlantCard({
         )}
       </div>
 
-      {done ? (
-        <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-          <CheckCircle2 size={16} />
-          Request sent! The grower will be in touch.
+      {/* Quantity stepper */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600">How many?</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onQtyChange(Math.max(0, qty - 1))}
+            disabled={qty === 0}
+            className="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-gray-600 hover:bg-stone-50 disabled:opacity-30 transition-colors"
+          >
+            <Minus size={14} />
+          </button>
+          <span className="w-6 text-center font-semibold text-gray-900">{qty}</span>
+          <button
+            type="button"
+            onClick={() => onQtyChange(Math.min(available, qty + 1))}
+            disabled={qty >= available}
+            className="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-gray-600 hover:bg-stone-50 disabled:opacity-30 transition-colors"
+          >
+            <Plus size={14} />
+          </button>
         </div>
-      ) : reserving ? (
-        <ReserveForm
-          planting={planting}
-          token={token}
-          userId={userId}
-          onSuccess={() => { setReserving(false); setDone(true); }}
-        />
-      ) : (
-        <button
-          onClick={() => setReserving(true)}
-          className="w-full py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors"
-        >
-          Reserve Plants
-        </button>
-      )}
+      </div>
     </div>
   );
 }
@@ -193,6 +94,14 @@ export default function SharePage() {
   const [page, setPage] = useState<SharePage | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  const [selections, setSelections] = useState<Record<string, number>>({});
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (!token) { setNotFound(true); setLoading(false); return; }
@@ -204,6 +113,38 @@ export default function SharePage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [token]);
+
+  const hasSelections = Object.values(selections).some((v) => v > 0);
+  const selectedCount = Object.values(selections).reduce((a, b) => a + b, 0);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) { setError('Please enter your name.'); return; }
+    if (!page) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const selected = Object.entries(selections).filter(([, qty]) => qty > 0);
+      await Promise.all(
+        selected.map(([plantingId, quantity]) =>
+          createReservation({
+            token: page.token,
+            userId: page.userId,
+            plantingId,
+            requesterName: name.trim(),
+            ...(email.trim() && { requesterEmail: email.trim() }),
+            quantity,
+            ...(notes.trim() && { notes: notes.trim() }),
+          })
+        )
+      );
+      setDone(true);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -236,23 +177,94 @@ export default function SharePage() {
           <span className="font-bold text-green-700 text-lg">Last Frost</span>
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mt-2">{page.gardenName}</h1>
+        {page.ownerName && (
+          <p className="text-sm text-gray-600 mt-0.5">by {page.ownerName}</p>
+        )}
         <p className="text-sm text-gray-500 mt-1">Plants available to share with the community</p>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
-        {available.length === 0 ? (
+        {done ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 text-center">
+            <CheckCircle2 className="text-green-500 mx-auto mb-3" size={40} />
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Request sent!</h2>
+            <p className="text-sm text-gray-500">
+              {page.ownerName ?? 'The grower'} will be in touch to confirm your plants.
+            </p>
+          </div>
+        ) : available.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">No plants available right now. Check back later!</p>
           </div>
         ) : (
-          available.map((p) => (
-            <PlantCard
-              key={p.plantingId}
-              planting={p}
-              token={page.token}
-              userId={page.userId}
-            />
-          ))
+          <>
+            {available.map((p) => (
+              <PlantCard
+                key={p.plantingId}
+                planting={p}
+                qty={selections[p.plantingId] ?? 0}
+                onQtyChange={(qty) => setSelections((prev) => ({ ...prev, [p.plantingId]: qty }))}
+              />
+            ))}
+
+            {/* Sign-up form — appears once any quantity is selected */}
+            {hasSelections && (
+              <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-5">
+                <h2 className="font-semibold text-gray-900 mb-1">
+                  Request {selectedCount} plant{selectedCount !== 1 ? 's' : ''}
+                </h2>
+                <p className="text-xs text-gray-500 mb-4">
+                  {Object.entries(selections)
+                    .filter(([, qty]) => qty > 0)
+                    .map(([id, qty]) => {
+                      const p = available.find((pl) => pl.plantingId === id);
+                      return p ? `${qty}× ${p.varietyName || p.seedName}` : null;
+                    })
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your name *</label>
+                    <input
+                      className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="First name is fine"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                    <input
+                      type="email"
+                      className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="So they can confirm with you"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
+                    <input
+                      className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="e.g. 'I live two streets over'"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {submitting && <Loader2 size={14} className="animate-spin" />}
+                    {submitting ? 'Submitting…' : `Request ${selectedCount} Plant${selectedCount !== 1 ? 's' : ''}`}
+                  </button>
+                </form>
+              </div>
+            )}
+          </>
         )}
 
         {/* Sign-up CTA */}

@@ -68,7 +68,7 @@ export default function Profile() {
       ...(p.firstBloomDate && { firstBloomDate: p.firstBloomDate }),
       ...(p.firstHarvestDate && { firstHarvestDate: p.firstHarvestDate }),
     }));
-    updateSharePage(shareToken, user.uid, settings.profile?.gardenName ?? 'My Garden', shareable);
+    updateSharePage(shareToken, user.uid, settings.profile?.gardenName ?? 'My Garden', shareable, user.displayName ?? undefined);
   }, [shareToken, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGetShareLink = async () => {
@@ -88,7 +88,7 @@ export default function Profile() {
       ...(p.firstBloomDate && { firstBloomDate: p.firstBloomDate }),
       ...(p.firstHarvestDate && { firstHarvestDate: p.firstHarvestDate }),
     }));
-    await updateSharePage(token, user.uid, settings.profile?.gardenName ?? 'My Garden', shareable);
+    await updateSharePage(token, user.uid, settings.profile?.gardenName ?? 'My Garden', shareable, user.displayName ?? undefined);
   };
 
   const handleCopyLink = async () => {
