@@ -180,8 +180,8 @@ export default function SharePage() {
         </h1>
         <p className="text-sm text-gray-500 mt-3 max-w-md mx-auto">
           {page.ownerName
-            ? `${page.ownerName.split(' ')[0]} has offered to share some of their garden's harvest with the community. Browse what's available below, choose how many you'd like of each, and submit a single request — they'll reach out to arrange pickup.`
-            : `This gardener has offered to share some of their harvest with the community. Browse what's available below, choose how many you'd like of each, and submit a single request — they'll reach out to arrange pickup.`}
+            ? `${page.ownerName.split(' ')[0]} has offered to share some of their garden's harvest with the community. Browse what's available below, choose how many you'd like of each, and submit a single request — they'll reach out to arrange pickup when the plants are ready to go.`
+            : `This gardener has offered to share some of their harvest with the community. Browse what's available below, choose how many you'd like of each, and submit a single request — they'll reach out to arrange pickup when the plants are ready to go.`}
         </p>
       </div>
 
