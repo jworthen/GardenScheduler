@@ -181,9 +181,9 @@ export default function SharePage() {
         <p className="text-sm text-gray-500 mt-1">Plants available to share with the community</p>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {done ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 text-center">
+          <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-sm border border-green-200 p-6 text-center">
             <CheckCircle2 className="text-green-500 mx-auto mb-3" size={40} />
             <h2 className="text-lg font-bold text-gray-900 mb-1">Request sent!</h2>
             <p className="text-sm text-gray-500">
@@ -196,18 +196,20 @@ export default function SharePage() {
           </div>
         ) : (
           <>
-            {available.map((p) => (
-              <PlantCard
-                key={p.plantingId}
-                planting={p}
-                qty={selections[p.plantingId] ?? 0}
-                onQtyChange={(qty) => setSelections((prev) => ({ ...prev, [p.plantingId]: qty }))}
-              />
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {available.map((p) => (
+                <PlantCard
+                  key={p.plantingId}
+                  planting={p}
+                  qty={selections[p.plantingId] ?? 0}
+                  onQtyChange={(qty) => setSelections((prev) => ({ ...prev, [p.plantingId]: qty }))}
+                />
+              ))}
+            </div>
 
             {/* Sign-up form — appears once any quantity is selected */}
             {hasSelections && (
-              <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-5">
+              <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-sm border border-green-200 p-5">
                 <h2 className="font-semibold text-gray-900 mb-1">
                   Request {selectedCount} plant{selectedCount !== 1 ? 's' : ''}
                 </h2>
@@ -266,7 +268,7 @@ export default function SharePage() {
         )}
 
         {/* Sign-up CTA */}
-        <div className="bg-white rounded-2xl border border-stone-100 p-5 text-center mt-6">
+        <div className="max-w-lg mx-auto bg-white rounded-2xl border border-stone-100 p-5 text-center">
           <p className="text-sm font-medium text-gray-700 mb-1">Want to share your own plants?</p>
           <p className="text-xs text-gray-500 mb-3">
             Last Frost is a free garden planner that helps you schedule seeds, track plantings, and share plants with neighbors.
