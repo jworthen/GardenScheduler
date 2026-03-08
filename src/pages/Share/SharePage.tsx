@@ -163,9 +163,9 @@ export default function SharePage() {
     );
   }
 
-  const available = page.plantings.filter(
-    (p) => p.availableToShare - p.reservedCount > 0,
-  );
+  const available = page.plantings
+    .filter((p) => p.availableToShare - p.reservedCount > 0)
+    .sort((a, b) => (a.varietyName || a.seedName).localeCompare(b.varietyName || b.seedName));
 
   return (
     <div className="min-h-screen bg-green-50">
