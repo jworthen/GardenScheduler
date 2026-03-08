@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -15,9 +16,11 @@ import {
   Grid3X3,
   Images,
   Rows3,
+  MessageSquarePlus,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
+import FeedbackModal from '../FeedbackModal';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -35,12 +38,14 @@ const navItems = [
 
 export default function Sidebar() {
   const { user, signOut } = useAuth();
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const initials = user?.displayName
     ? user.displayName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
   return (
+    <>
     <div className="flex flex-col h-full bg-white border-r border-stone-200">
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-stone-100">
@@ -87,6 +92,13 @@ export default function Sidebar() {
 
       {/* Settings + Profile at bottom */}
       <div className="px-3 pb-2 border-t border-stone-100 pt-3 space-y-1">
+        <button
+          onClick={() => setShowFeedback(true)}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 w-full text-left text-gray-600 hover:bg-stone-50 hover:text-gray-900"
+        >
+          <MessageSquarePlus size={18} className="text-gray-400 flex-shrink-0" />
+          Send Feedback
+        </button>
         {[{ to: '/profile', icon: User, label: 'Profile' }, { to: '/settings', icon: Settings, label: 'Settings' }].map(
           ({ to, icon: Icon, label }) => (
             <NavLink
@@ -139,5 +151,7 @@ export default function Sidebar() {
         </div>
       </div>
     </div>
+    {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+    </>
   );
 }

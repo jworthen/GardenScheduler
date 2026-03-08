@@ -446,27 +446,31 @@ Push upcoming tasks and frost warnings to users so they don't have to open the a
 ---
 
 ## Feature 8: In-App User Feedback & Suggestions
+`[x]` **Complete.**
 **No dependencies — standalone feature.**
 
 Let users send feature suggestions, bug reports, or general feedback without leaving the app. Lightweight and low-friction — a single form that routes to a moderated inbox.
 
 ### How it works
-1. A persistent "Send Feedback" entry point lives in the app (footer link or help menu)
-2. User selects a category (Bug report / Feature suggestion / General feedback), writes a short message, and submits
-3. Submissions land in an admin inbox; popular or recurring suggestions can be surfaced to inform the roadmap
+1. A persistent "Send Feedback" button lives in the sidebar, accessible from every page
+2. User selects a category (Bug Report / Feature Request / General), writes a short message, and submits
+3. Submissions land in the admin feedback inbox at `/admin/feedback`
 
 ### Guardrails
-- Rate limiting per user/IP to prevent spam
+- Rate limiting per user: max 5 submissions per day (checked against Firestore)
 - Category required (reduces noise, helps triage)
 - No PII collected beyond what the user voluntarily includes in the message
 - No public-facing voting or comment threads in v1 — keep it simple and one-directional first
 
 ### Scope
-- [ ] Feedback button/link accessible from all pages
-- [ ] Submission form: category selector + freeform text (500 char limit)
-- [ ] Rate limit: max 5 submissions per user per day
-- [ ] Admin inbox view: list of submissions filterable by category and date
-- [ ] Auto-reply email acknowledging receipt (optional but friendly)
+- [x] "Send Feedback" button in the sidebar, accessible from all pages
+- [x] Submission modal: 3-category selector (Bug / Feature / General) + freeform text (500 char limit with live counter)
+- [x] Success state with confirmation message after submit
+- [x] Rate limit: max 5 submissions per user per day (Firestore-backed)
+- [x] Admin inbox at `/admin/feedback`: list filterable by status (new/read/resolved) and category
+- [x] Mark as Read / Resolve / Reopen actions on each submission
+- [x] New submissions highlighted with green left border; new count in page subtitle
+- [ ] Auto-reply email acknowledging receipt — deferred (needs Firebase Trigger Email extension)
 - [ ] Optional in v2: upvoting / "me too" on surfaced suggestions
 
 ---

@@ -15,6 +15,7 @@ import Settings from './pages/Settings/Settings';
 import Profile from './pages/Profile/Profile';
 import WhatCanIPlant from './pages/Tools/WhatCanIPlant';
 import AdminSeedRequests from './pages/Admin/AdminSeedRequests';
+import AdminFeedback from './pages/Admin/AdminFeedback';
 import SeedCellPlanner from './pages/CellPlanner/SeedCellPlanner';
 import GardenGallery from './pages/Gallery/GardenGallery';
 import GardenBeds from './pages/Beds/GardenBeds';
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="/gallery" element={<GardenGallery />} />
         <Route path="/beds" element={<GardenBeds />} />
         <Route path="/admin" element={<AdminSeedRequests />} />
+        <Route path="/admin/feedback" element={<AdminFeedback />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
