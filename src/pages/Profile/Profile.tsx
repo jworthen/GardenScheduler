@@ -20,7 +20,10 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
 
   // Share link state
-  const [shareToken, setShareToken] = useState<string | null>(settings.profile?.shareToken ?? null);
+  const storedToken = settings.profile?.shareToken ?? null;
+  const [shareToken, setShareToken] = useState<string | null>(
+    storedToken && /^[a-z2-9]{12}$/.test(storedToken) ? storedToken : null,
+  );
   const [tokenLoading, setTokenLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
