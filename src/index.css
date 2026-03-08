@@ -296,11 +296,31 @@
     display: none !important;
   }
 
-  body.printing-seed-tag .seed-tag-print-root {
+  /* Single tag: centered on page */
+  body.printing-seed-tag:not(.printing-bulk) .seed-tag-print-root {
     display: flex !important;
     justify-content: center;
     align-items: flex-start;
     padding: 0.25in;
+  }
+
+  /* Bulk: sheet of tags, wrap across pages */
+  body.printing-seed-tag.printing-bulk .seed-tag-print-root {
+    display: block !important;
+    padding: 0;
+  }
+
+  .seed-tag-bulk-sheet {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15in;
+    padding: 0.25in;
+    align-items: flex-start;
+  }
+
+  .seed-tag-bulk-cell {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   body.printing-seed-tag .seed-tag-stake {

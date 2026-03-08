@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, X, Flower2, Trash2, Share2 } from 'lucide-react';
+import { Plus, Search, X, Flower2, Trash2, Share2, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
@@ -8,6 +8,7 @@ import { formatDisplayDateShort } from '../../utils/dateCalculations';
 import { deletePhotos } from '../../lib/photoUpload';
 import PageHeader from '../../components/common/PageHeader';
 import PlantingDetailPanel from '../../components/PlantingDetail/PlantingDetailPanel';
+import BulkTagPrintModal from '../../components/SeedTag/BulkTagPrintModal';
 
 // ===== HELPERS =====
 
@@ -121,6 +122,7 @@ const SORT_KEYS: SortKey[] = ['name', 'sowDate', 'transplantDate'];
 export default function Plantings() {
   const { plantings, removePlanting, clearAllPlantings } = useGardenStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showBulkPrint, setShowBulkPrint] = useState(false);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<PlantCategory | ''>('');
   const [filterBed, setFilterBed] = useState('');
@@ -197,19 +199,28 @@ export default function Plantings() {
         actions={
           <div className="flex items-center gap-2">
             {plantings.length > 0 && (
-              <button
-                onClick={async () => {
-                  if (!window.confirm(`Delete all ${plantings.length} planting${plantings.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
-                  const allPhotos = plantings.flatMap((p) => p.photos ?? []);
-                  if (allPhotos.length) await deletePhotos(allPhotos);
-                  clearAllPlantings();
-                  setSelectedId(null);
-                }}
-                className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-red-200 transition-colors"
-              >
-                <Trash2 size={15} />
-                Delete All
-              </button>
+              <>
+                <button
+                  onClick={() => setShowBulkPrint(true)}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-stone-100 px-3 py-2 rounded-lg border border-stone-200 transition-colors"
+                >
+                  <Printer size={15} />
+                  Print Tags
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm(`Delete all ${plantings.length} planting${plantings.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+                    const allPhotos = plantings.flatMap((p) => p.photos ?? []);
+                    if (allPhotos.length) await deletePhotos(allPhotos);
+                    clearAllPlantings();
+                    setSelectedId(null);
+                  }}
+                  className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-red-200 transition-colors"
+                >
+                  <Trash2 size={15} />
+                  Delete All
+                </button>
+              </>
             )}
             <Link to="/seeds" className="btn-primary text-sm">
               <Plus size={16} /> Add Plant
@@ -334,6 +345,13 @@ export default function Plantings() {
           </>
         )}
       </div>
+
+      {showBulkPrint && (
+        <BulkTagPrintModal
+          plantings={filtered}
+          onClose={() => setShowBulkPrint(false)}
+        />
+      )}
 
       {selectedPlanting && (
         <PlantingDetailPanel
