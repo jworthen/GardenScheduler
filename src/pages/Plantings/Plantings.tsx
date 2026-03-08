@@ -114,7 +114,14 @@ export default function Plantings() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<PlantCategory | ''>('');
   const [filterBed, setFilterBed] = useState('');
-  const [sort, setSort] = useState<SortKey>('sowDate');
+  const [sort, setSort] = useState<SortKey>(
+    () => (localStorage.getItem('plantings-sort') as SortKey | null) ?? 'sowDate'
+  );
+
+  const setSortPersisted = (key: SortKey) => {
+    localStorage.setItem('plantings-sort', key);
+    setSort(key);
+  };
 
   const selectedPlanting = plantings.find((p) => p.id === selectedId) ?? null;
 
@@ -265,7 +272,7 @@ export default function Plantings() {
               {/* Sort */}
               <select
                 value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
+                onChange={(e) => setSortPersisted(e.target.value as SortKey)}
                 className="input text-sm w-auto"
               >
                 <option value="sowDate">Sort: Sow date</option>
