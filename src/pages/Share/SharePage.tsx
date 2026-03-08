@@ -61,7 +61,7 @@ function PlantCard({
 
       {/* Quantity stepper */}
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-600">How many?</span>
+        <span className="text-sm text-gray-600">How many to request?</span>
         <div className="flex items-center gap-3">
           <button
             type="button"
