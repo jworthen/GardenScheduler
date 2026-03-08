@@ -17,10 +17,13 @@ import {
   Images,
   Rows3,
   MessageSquarePlus,
+  ShieldCheck,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import FeedbackModal from '../FeedbackModal';
+
+const ADMIN_UID = import.meta.env.VITE_ADMIN_UID as string | undefined;
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -39,6 +42,7 @@ const navItems = [
 export default function Sidebar() {
   const { user, signOut } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
+  const isAdmin = !!ADMIN_UID && user?.uid === ADMIN_UID;
 
   const initials = user?.displayName
     ? user.displayName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
@@ -89,6 +93,38 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Admin links — only visible to the admin user */}
+      {isAdmin && (
+        <div className="px-3 pb-2 border-t border-stone-100 pt-3 space-y-1">
+          <p className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider pb-1">Admin</p>
+          {[
+            { to: '/admin', label: 'Seed Requests' },
+            { to: '/admin/feedback', label: 'Feedback' },
+          ].map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
+                  isActive
+                    ? 'bg-garden-50 text-garden-700'
+                    : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900'
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <ShieldCheck size={18} className={clsx('flex-shrink-0', isActive ? 'text-garden-600' : 'text-gray-400')} />
+                  {label}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      )}
 
       {/* Settings + Profile at bottom */}
       <div className="px-3 pb-2 border-t border-stone-100 pt-3 space-y-1">
