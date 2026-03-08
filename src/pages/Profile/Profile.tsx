@@ -58,22 +58,6 @@ export default function Profile() {
       const token = await getOrCreateShareToken(user.uid);
       setShareToken(token);
       updateSettings({ profile: { ...settings.profile, shareToken: token } });
-      const url = `${window.location.origin}/share/${token}`;
-      // navigator.clipboard requires a fresh user-gesture; after an async Firestore
-      // call the activation may have expired, so fall back to execCommand.
-      try {
-        await navigator.clipboard.writeText(url);
-      } catch {
-        const el = document.createElement('textarea');
-        el.value = url;
-        el.style.cssText = 'position:fixed;opacity:0';
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } finally {
       setTokenLoading(false);
     }
