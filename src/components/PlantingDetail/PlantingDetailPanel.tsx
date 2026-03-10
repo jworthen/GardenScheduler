@@ -156,19 +156,28 @@ export default function PlantingDetailPanel({ planting, onClose, onRemove }: Pro
         </div>
 
         {/* Details */}
-        {(planting.quantity > 1 || planting.notes) && (
-          <div className="space-y-2 mb-5">
-            {planting.quantity > 1 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Quantity</span>
-                <span className="font-medium">{planting.quantity} plants</span>
-              </div>
-            )}
-            {planting.notes && (
-              <p className="text-sm text-gray-600 bg-stone-50 rounded-xl p-3">{planting.notes}</p>
-            )}
+        <div className="space-y-2 mb-5">
+          <div className="flex items-center justify-between py-1.5 border-b border-stone-100">
+            <span className="text-sm text-gray-600">Quantity</span>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min={1}
+                max={9999}
+                value={planting.quantity || 1}
+                onChange={(e) => {
+                  const val = Math.max(1, Number(e.target.value) || 1);
+                  updatePlanting(planting.id, { quantity: val });
+                }}
+                className="text-sm font-medium bg-transparent border-0 rounded px-1.5 py-0.5 text-right w-16 focus:outline-none focus:ring-1 focus:ring-garden-500 focus:bg-white hover:bg-stone-50 transition-colors"
+              />
+              <span className="text-sm text-gray-400">plants</span>
+            </div>
           </div>
-        )}
+          {planting.notes && (
+            <p className="text-sm text-gray-600 bg-stone-50 rounded-xl p-3">{planting.notes}</p>
+          )}
+        </div>
 
         {/* Succession Planting */}
         {!planting.parentPlantingId && (
