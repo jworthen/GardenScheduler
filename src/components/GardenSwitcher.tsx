@@ -111,7 +111,11 @@ export default function GardenSwitcher() {
       await joinGarden(code);
       closeDropdown();
     } catch (err) {
-      setJoinError(err instanceof Error ? err.message : 'Could not join garden');
+      const raw = err instanceof Error ? err.message : String(err);
+      const friendly = raw.includes('permission') || raw.includes('Permission')
+        ? 'Permission denied — the garden owner may need to re-share, or the app needs a settings update. Check with the garden owner.'
+        : raw || 'Could not join garden';
+      setJoinError(friendly);
     } finally {
       setJoining(false);
     }

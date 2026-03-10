@@ -366,7 +366,7 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
    */
   const joinGarden = useCallback(
     async (code: string): Promise<void> => {
-      if (!user) return;
+      if (!user) throw new Error('You must be signed in to join a garden');
       const invite = await lookupInviteCode(code);
       if (!invite) throw new Error('Invalid or expired invite code');
 
