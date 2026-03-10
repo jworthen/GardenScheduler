@@ -13,6 +13,10 @@ import {
   loadGardenData,
   saveGardenData,
   deleteGardenData,
+  createInviteCode,
+  lookupInviteCode,
+  addGardenMember,
+  removeGardenMember,
 } from '../lib/gardens';
 import { GardenContextValue } from '../contexts/GardenContext';
 
@@ -65,17 +69,27 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
     setActiveGardenId(id);
   };
 
+  /** Returns the Firestore ownerUid for a given garden (shared gardens use sharedOwnerId). */
+  const ownerUidFor = useCallback(
+    (gardenId: string): string => {
+      const g = gardensRef.current.find((x) => x.id === gardenId);
+      return g?.sharedOwnerId ?? user!.uid;
+    },
+    [user],
+  );
+
   // Immediately flush current store state to Firestore (before switching gardens)
   const flushCurrent = useCallback(() => {
     const gardenId = activeGardenIdRef.current;
     if (!user || !gardenId) return;
+    const ownerUid = ownerUidFor(gardenId);
     const { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, beds } =
       useGardenStore.getState();
     const savedAt = new Date().toISOString();
-    setDoc(gardenDocRef(user.uid, gardenId), {
+    setDoc(gardenDocRef(ownerUid, gardenId), {
       settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, beds, savedAt,
     });
-  }, [user]);
+  }, [user, ownerUidFor]);
 
   const hydrateFromData = useCallback(
     (data: Record<string, unknown>) => {
@@ -135,6 +149,7 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
               id: 'default',
               name: gardenName,
               createdAt: new Date().toISOString(),
+              role: 'owner',
             };
             await saveGardenData(user!.uid, 'default', legacyData);
             gardensList = [defaultGarden];
@@ -145,6 +160,7 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
               id: 'default',
               name: 'My Garden',
               createdAt: new Date().toISOString(),
+              role: 'owner',
             };
             gardensList = [defaultGarden];
             await saveGardensList(user!.uid, gardensList);
@@ -165,7 +181,9 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
         localStorage.setItem(activeGardenKey(user!.uid), initialId);
 
         // Hydrate the store from the active garden's Firestore data
-        const data = await loadGardenData(user!.uid, initialId);
+        const initialGarden = gardensList.find((g) => g.id === initialId);
+        const ownerUid = initialGarden?.sharedOwnerId ?? user!.uid;
+        const data = await loadGardenData(ownerUid, initialId);
         if (data) {
           const firestoreSavedAt = (data.savedAt as string) ?? '';
           const localWriteTime = localStorage.getItem(localWriteKey(user!.uid, initialId)) ?? '';
@@ -204,9 +222,10 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
         if (totalItems === 0) return;
       }
 
+      const ownerUid = ownerUidFor(gardenId);
       const { settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, beds } = state;
       const savedAt = new Date().toISOString();
-      setDoc(gardenDocRef(user!.uid, gardenId), {
+      setDoc(gardenDocRef(ownerUid, gardenId), {
         settings, plantings, tasks, inventory, journalEntries, customPlants, cellPlans, beds, savedAt,
       });
     }
@@ -222,7 +241,7 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, ownerUidFor]);
 
   // ── Garden CRUD ──────────────────────────────────────────────────────────
 
@@ -237,7 +256,9 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
         setActiveAll(newId);
         localStorage.setItem(activeGardenKey(user.uid), newId);
 
-        const data = await loadGardenData(user.uid, newId);
+        const newGarden = gardensRef.current.find((g) => g.id === newId);
+        const ownerUid = newGarden?.sharedOwnerId ?? user.uid;
+        const data = await loadGardenData(ownerUid, newId);
         if (data) {
           hydrate({
             settings:       data.settings,
@@ -271,7 +292,7 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
     async (name: string) => {
       if (!user) return;
       const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-      const newGarden: GardenMeta = { id, name, createdAt: new Date().toISOString() };
+      const newGarden: GardenMeta = { id, name, createdAt: new Date().toISOString(), role: 'owner' };
 
       // Inherit location (zone/frost dates) from the current garden
       const cur = useGardenStore.getState();
@@ -325,6 +346,82 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
     [user, switchGarden],
   );
 
+  /**
+   * Generates a shareable invite code for one of your own gardens.
+   * Returns the 6-char code to display to the user.
+   */
+  const shareGarden = useCallback(
+    async (gardenId: string): Promise<string> => {
+      if (!user) throw new Error('Not authenticated');
+      const garden = gardensRef.current.find((g) => g.id === gardenId);
+      if (!garden || garden.role === 'member') throw new Error('Cannot share a garden you do not own');
+      return createInviteCode(user.uid, gardenId, garden.name);
+    },
+    [user],
+  );
+
+  /**
+   * Joins a shared garden by invite code.
+   * Adds it to the user's gardens list and switches to it.
+   */
+  const joinGarden = useCallback(
+    async (code: string): Promise<void> => {
+      if (!user) return;
+      const invite = await lookupInviteCode(code);
+      if (!invite) throw new Error('Invalid or expired invite code');
+
+      const { ownerId, gardenId, gardenName } = invite;
+
+      // Already joined — just switch to it
+      if (gardensRef.current.some((g) => g.id === gardenId)) {
+        await switchGarden(gardenId);
+        return;
+      }
+
+      // Register this user as a member on the garden doc
+      await addGardenMember(ownerId, gardenId, user.uid);
+
+      const sharedGarden: GardenMeta = {
+        id: gardenId,
+        name: gardenName,
+        createdAt: new Date().toISOString(),
+        sharedOwnerId: ownerId,
+        role: 'member',
+      };
+
+      const updatedGardens = [...gardensRef.current, sharedGarden];
+      await saveGardensList(user.uid, updatedGardens);
+      setGardensAll(updatedGardens);
+      await switchGarden(gardenId);
+    },
+    [user, switchGarden],
+  );
+
+  /**
+   * Leaves a shared garden (member removes themselves).
+   */
+  const leaveGarden = useCallback(
+    async (gardenId: string): Promise<void> => {
+      if (!user) return;
+      const garden = gardensRef.current.find((g) => g.id === gardenId);
+      if (!garden || garden.role !== 'member') return;
+
+      if (gardenId === activeGardenIdRef.current) {
+        const other = gardensRef.current.find((g) => g.id !== gardenId);
+        if (other) await switchGarden(other.id);
+      }
+
+      const updated = gardensRef.current.filter((g) => g.id !== gardenId);
+      await saveGardensList(user.uid, updated);
+      setGardensAll(updated);
+
+      if (garden.sharedOwnerId) {
+        await removeGardenMember(garden.sharedOwnerId, gardenId, user.uid);
+      }
+    },
+    [user, switchGarden],
+  );
+
   return {
     firestoreReady,
     gardens,
@@ -334,5 +431,8 @@ export function useFirestoreSync(): { firestoreReady: boolean } & GardenContextV
     createGarden,
     renameGarden,
     deleteGarden,
+    shareGarden,
+    joinGarden,
+    leaveGarden,
   };
 }
