@@ -117,8 +117,6 @@ export default function GardenSwitcher() {
     }
   };
 
-  if (gardens.length === 0) return null;
-
   const isActiveOwned = activeGarden?.role !== 'member';
 
   return (

@@ -144,7 +144,7 @@ type SortKey = 'name' | 'sowDate' | 'transplantDate';
 const SORT_KEYS: SortKey[] = ['name', 'sowDate', 'transplantDate'];
 
 export default function Plantings() {
-  const { plantings, tasks, removePlanting, clearAllPlantings } = useGardenStore();
+  const { plantings, tasks, cellPlans, removePlanting, clearAllPlantings } = useGardenStore();
   const { user } = useAuth();
   const { gardens, activeGardenId } = useGardenContext();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -154,6 +154,7 @@ export default function Plantings() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [copyTargetId, setCopyTargetId] = useState('');
+  const [copyCellPlans, setCopyCellPlans] = useState(true);
   const [copying, setCopying] = useState(false);
 
   const otherGardens = gardens.filter((g) => g.id !== activeGardenId);
@@ -170,6 +171,7 @@ export default function Plantings() {
     setSelectMode(false);
     setSelectedIds(new Set());
     setCopyTargetId('');
+    setCopyCellPlans(true);
   };
 
   const handleCopyToGarden = async () => {
@@ -183,35 +185,44 @@ export default function Plantings() {
       const existing = await loadGardenData(ownerUid, copyTargetId);
       const existingPlantings = (existing?.plantings as PlantingEntry[]) ?? [];
       const existingTasks = (existing?.tasks ?? []) as typeof tasks;
+      const existingCellPlans = (existing?.cellPlans ?? []) as typeof cellPlans;
 
       const toCopy = plantings.filter((p) => selectedIds.has(p.id));
+      const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
       // Map old IDs → new IDs so tasks stay linked
       const idMap = new Map<string, string>();
       const newPlantings = toCopy.map((p) => {
-        const newId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-        idMap.set(p.id, newId);
-        return { ...p, id: newId };
+        const id = newId();
+        idMap.set(p.id, id);
+        return { ...p, id };
       });
       const newTasks = tasks
         .filter((t) => idMap.has(t.plantingEntryId))
-        .map((t) => ({
-          ...t,
-          id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-          plantingEntryId: idMap.get(t.plantingEntryId)!,
-        }));
+        .map((t) => ({ ...t, id: newId(), plantingEntryId: idMap.get(t.plantingEntryId)! }));
+
+      // Copy all cell plans, skipping any that already exist in the target by name+size
+      const newCellPlans = copyCellPlans
+        ? cellPlans
+            .filter((cp) => !existingCellPlans.some((e) => e.name === cp.name && e.rows === cp.rows && e.cols === cp.cols))
+            .map((cp) => ({ ...cp, id: newId() }))
+        : [];
 
       await saveGardenData(ownerUid, copyTargetId, {
         ...existing,
         plantings: [...existingPlantings, ...newPlantings],
         tasks: [...existingTasks, ...newTasks],
+        cellPlans: [...existingCellPlans, ...newCellPlans],
         savedAt: new Date().toISOString(),
       });
 
       exitSelectMode();
-      alert(`Copied ${newPlantings.length} planting${newPlantings.length !== 1 ? 's' : ''} to "${targetGarden.name}".`);
+      const parts = [`${newPlantings.length} planting${newPlantings.length !== 1 ? 's' : ''}`];
+      if (newCellPlans.length) parts.push(`${newCellPlans.length} cell plan${newCellPlans.length !== 1 ? 's' : ''}`);
+      alert(`Copied ${parts.join(' and ')} to "${targetGarden.name}".`);
     } catch (e) {
       console.error(e);
-      alert('Failed to copy plantings. Please try again.');
+      alert('Failed to copy. Please try again.');
     } finally {
       setCopying(false);
     }
@@ -440,6 +451,15 @@ export default function Plantings() {
                     Deselect all
                   </button>
                 )}
+                <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={copyCellPlans}
+                    onChange={(e) => setCopyCellPlans(e.target.checked)}
+                    className="rounded"
+                  />
+                  Include cell plans ({cellPlans.length})
+                </label>
                 <div className="flex-1" />
                 <select
                   value={copyTargetId}
