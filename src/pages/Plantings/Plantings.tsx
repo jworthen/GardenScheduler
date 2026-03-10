@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, X, Flower2, Trash2, Share2, Printer } from 'lucide-react';
+import { Plus, Search, X, Flower2, Trash2, Share2, Printer, CheckSquare, Square, Copy, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useGardenStore } from '../../store/useStore';
@@ -9,6 +9,9 @@ import { deletePhotos } from '../../lib/photoUpload';
 import PageHeader from '../../components/common/PageHeader';
 import PlantingDetailPanel from '../../components/PlantingDetail/PlantingDetailPanel';
 import BulkTagPrintModal from '../../components/SeedTag/BulkTagPrintModal';
+import { useGardenContext } from '../../contexts/GardenContext';
+import { loadGardenData, saveGardenData } from '../../lib/gardens';
+import { useAuth } from '../../contexts/AuthContext';
 
 // ===== HELPERS =====
 
@@ -36,27 +39,48 @@ function PlantingCard({
   planting,
   onClick,
   onDelete,
+  selectMode,
+  selected,
+  onSelect,
 }: {
   planting: PlantingEntry;
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
 }) {
   const displayName = planting.varietyName || planting.seedName;
   const subName = planting.varietyName ? planting.seedName : null;
 
   return (
-    <div className="card p-4 hover:shadow-md transition-all hover:-translate-y-0.5 group relative">
-      {/* Delete button — hover reveal */}
-      <button
-        onClick={onDelete}
-        className="absolute top-2.5 right-2.5 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
-        title="Delete planting"
-      >
-        <Trash2 size={14} />
-      </button>
+    <div
+      className={clsx(
+        'card p-4 hover:shadow-md transition-all hover:-translate-y-0.5 group relative',
+        selectMode && selected && 'ring-2 ring-garden-500 bg-garden-50',
+      )}
+      onClick={selectMode ? () => onSelect?.(planting.id) : undefined}
+    >
+      {/* Select checkbox (select mode) */}
+      {selectMode ? (
+        <div className="absolute top-2.5 right-2.5">
+          {selected
+            ? <CheckSquare size={16} className="text-garden-600" />
+            : <Square size={16} className="text-gray-300" />}
+        </div>
+      ) : (
+        /* Delete button — hover reveal */
+        <button
+          onClick={onDelete}
+          className="absolute top-2.5 right-2.5 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+          title="Delete planting"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
 
       {/* Clickable body */}
-      <button onClick={onClick} className="text-left w-full">
+      <button onClick={selectMode ? undefined : onClick} className="text-left w-full">
         {/* Header row */}
         <div className="flex items-start gap-3 mb-3 pr-6">
           <div className={clsx('w-3 h-3 rounded-full flex-shrink-0 mt-1', planting.color)} />
@@ -120,9 +144,78 @@ type SortKey = 'name' | 'sowDate' | 'transplantDate';
 const SORT_KEYS: SortKey[] = ['name', 'sowDate', 'transplantDate'];
 
 export default function Plantings() {
-  const { plantings, removePlanting, clearAllPlantings } = useGardenStore();
+  const { plantings, tasks, removePlanting, clearAllPlantings } = useGardenStore();
+  const { user } = useAuth();
+  const { gardens, activeGardenId } = useGardenContext();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showBulkPrint, setShowBulkPrint] = useState(false);
+
+  // ── Multi-select / copy ──
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [copyTargetId, setCopyTargetId] = useState('');
+  const [copying, setCopying] = useState(false);
+
+  const otherGardens = gardens.filter((g) => g.id !== activeGardenId);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    setCopyTargetId('');
+  };
+
+  const handleCopyToGarden = async () => {
+    if (!user || !copyTargetId || selectedIds.size === 0) return;
+    const targetGarden = gardens.find((g) => g.id === copyTargetId);
+    if (!targetGarden) return;
+
+    setCopying(true);
+    try {
+      const ownerUid = targetGarden.sharedOwnerId ?? user.uid;
+      const existing = await loadGardenData(ownerUid, copyTargetId);
+      const existingPlantings = (existing?.plantings as PlantingEntry[]) ?? [];
+      const existingTasks = (existing?.tasks ?? []) as typeof tasks;
+
+      const toCopy = plantings.filter((p) => selectedIds.has(p.id));
+      // Map old IDs → new IDs so tasks stay linked
+      const idMap = new Map<string, string>();
+      const newPlantings = toCopy.map((p) => {
+        const newId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+        idMap.set(p.id, newId);
+        return { ...p, id: newId };
+      });
+      const newTasks = tasks
+        .filter((t) => idMap.has(t.plantingEntryId))
+        .map((t) => ({
+          ...t,
+          id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+          plantingEntryId: idMap.get(t.plantingEntryId)!,
+        }));
+
+      await saveGardenData(ownerUid, copyTargetId, {
+        ...existing,
+        plantings: [...existingPlantings, ...newPlantings],
+        tasks: [...existingTasks, ...newTasks],
+        savedAt: new Date().toISOString(),
+      });
+
+      exitSelectMode();
+      alert(`Copied ${newPlantings.length} planting${newPlantings.length !== 1 ? 's' : ''} to "${targetGarden.name}".`);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to copy plantings. Please try again.');
+    } finally {
+      setCopying(false);
+    }
+  };
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<PlantCategory | ''>('');
   const [filterBed, setFilterBed] = useState('');
@@ -207,6 +300,15 @@ export default function Plantings() {
                   <Printer size={15} />
                   Print Tags
                 </button>
+                {otherGardens.length > 0 && (
+                  <button
+                    onClick={() => { setSelectMode(true); setSelectedId(null); }}
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-stone-100 px-3 py-2 rounded-lg border border-stone-200 transition-colors"
+                  >
+                    <Copy size={15} />
+                    Copy to Garden
+                  </button>
+                )}
                 <button
                   onClick={async () => {
                     if (!window.confirm(`Delete all ${plantings.length} planting${plantings.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
@@ -318,6 +420,51 @@ export default function Plantings() {
               </p>
             )}
 
+            {/* Select mode bar */}
+            {selectMode && (
+              <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-garden-50 rounded-xl border border-garden-200">
+                <span className="text-sm font-medium text-garden-800">
+                  {selectedIds.size} selected
+                </span>
+                <button
+                  onClick={() => setSelectedIds(new Set(filtered.map((p) => p.id)))}
+                  className="text-sm text-garden-600 hover:underline"
+                >
+                  Select all ({filtered.length})
+                </button>
+                {selectedIds.size > 0 && (
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="text-sm text-gray-500 hover:underline"
+                  >
+                    Deselect all
+                  </button>
+                )}
+                <div className="flex-1" />
+                <select
+                  value={copyTargetId}
+                  onChange={(e) => setCopyTargetId(e.target.value)}
+                  className="input text-sm w-auto"
+                >
+                  <option value="">Copy to…</option>
+                  {otherGardens.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleCopyToGarden}
+                  disabled={selectedIds.size === 0 || !copyTargetId || copying}
+                  className="btn-primary text-sm disabled:opacity-50"
+                >
+                  {copying ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
+                  {copying ? 'Copying…' : 'Copy'}
+                </button>
+                <button onClick={exitSelectMode} className="btn-secondary text-sm">
+                  <X size={14} /> Cancel
+                </button>
+              </div>
+            )}
+
             {filtered.length === 0 ? (
               <div className="text-center py-16 text-gray-400">
                 <p className="font-medium">No plants match your filters</p>
@@ -338,6 +485,9 @@ export default function Plantings() {
                         if (selectedId === p.id) setSelectedId(null);
                       }
                     }}
+                    selectMode={selectMode}
+                    selected={selectedIds.has(p.id)}
+                    onSelect={toggleSelect}
                   />
                 ))}
               </div>
